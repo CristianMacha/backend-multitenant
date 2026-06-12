@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+.git
+.env
+.env.*
+!.env.sample
+*.log
+.DS_Store
+.husky
+.github
+README.md
