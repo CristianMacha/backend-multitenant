@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { AccountsModule } from './accounts/accounts.module';
+import { ContactsModule } from './contacts/contacts.module';
 
 /**
  * CRM bounded context — relationship data.
@@ -15,7 +17,7 @@ import { Module } from '@nestjs/common';
  * or read models exported here — never by importing another context's internals.
  */
 @Module({
-  imports: [],
-  exports: [],
+  imports: [AccountsModule, ContactsModule],
+  exports: [AccountsModule, ContactsModule],
 })
 export class CrmContextModule {}
