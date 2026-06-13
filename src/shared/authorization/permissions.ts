@@ -23,6 +23,42 @@ export const Perm = {
   auditLogs: {
     read: 'audit-logs.read',
   },
+  // --- CRM (crm + sales contexts). Reserved here; registered in prisma/seed.ts
+  // and enforced on routes as each module lands per the CRM plan phases. ---
+  accounts: {
+    create: 'accounts.create',
+    read: 'accounts.read',
+    update: 'accounts.update',
+    delete: 'accounts.delete',
+  },
+  contacts: {
+    create: 'contacts.create',
+    read: 'contacts.read',
+    update: 'contacts.update',
+    delete: 'contacts.delete',
+  },
+  pipelines: {
+    create: 'pipelines.create',
+    read: 'pipelines.read',
+    update: 'pipelines.update',
+    delete: 'pipelines.delete',
+  },
+  opportunities: {
+    create: 'opportunities.create',
+    read: 'opportunities.read',
+    update: 'opportunities.update',
+    delete: 'opportunities.delete',
+    reassign: 'opportunities.reassign',
+  },
+  activities: {
+    create: 'activities.create',
+    read: 'activities.read',
+    update: 'activities.update',
+    delete: 'activities.delete',
+  },
+  dashboard: {
+    read: 'dashboard.read',
+  },
 } as const;
 
 export type PermissionCode =

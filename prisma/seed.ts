@@ -44,6 +44,15 @@ const PERMISSIONS = [
 // super admins are global operators flagged on the user account
 // (User.isPlatformAdmin), never a per-tenant role. ADMIN is the tenant owner
 // and gets every tenant-scoped permission except tenant management.
+//
+// CRM role mapping (applied from Phase 1 on, see docs/crm-implementation-plan.md):
+// the three system roles double as the CRM roles — ADMIN keeps all CRM
+// permissions, MANAGER becomes the "Sales Manager" (read everything, manage
+// pipelines, read/update/reassign all opportunities, read dashboard) and USER
+// becomes the "Sales Agent" (CRUD on their own accounts/contacts/activities,
+// manage opportunities they own, read their own dashboard). CRM permission
+// codes are reserved in @shared/authorization/permissions.ts and added to
+// PERMISSIONS / the role sets below as each module lands.
 const SYSTEM_ROLES: Record<string, string[]> = {
   ADMIN: PERMISSIONS.filter((p) => !p.code.startsWith('tenants.')).map(
     (p) => p.code,

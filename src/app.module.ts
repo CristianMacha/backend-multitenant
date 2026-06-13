@@ -26,6 +26,8 @@ import { PlatformAdminGuard } from '@contexts/iam/auth/presentation/guards/platf
 import { IamContextModule } from '@contexts/iam/iam-context.module';
 import { TenancyContextModule } from '@contexts/tenancy/tenancy-context.module';
 import { AuditContextModule } from '@contexts/audit/audit-context.module';
+import { CrmContextModule } from '@contexts/crm/crm-context.module';
+import { SalesContextModule } from '@contexts/sales/sales-context.module';
 import { PlatformModule } from '@platform/platform.module';
 
 @Module({
@@ -70,6 +72,8 @@ import { PlatformModule } from '@platform/platform.module';
     IamContextModule,
     TenancyContextModule,
     AuditContextModule,
+    CrmContextModule,
+    SalesContextModule,
   ],
   providers: [
     {
