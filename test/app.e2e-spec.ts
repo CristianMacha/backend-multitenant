@@ -62,4 +62,14 @@ describe('Backend Core (e2e)', () => {
   it('GET /api/v1/contacts without token responds 401', () => {
     return request(app.getHttpServer()).get('/api/v1/contacts').expect(401);
   });
+
+  it('GET /api/v1/pipelines without token responds 401', () => {
+    return request(app.getHttpServer()).get('/api/v1/pipelines').expect(401);
+  });
+
+  it('GET /api/v1/opportunities without token responds 401', () => {
+    return request(app.getHttpServer())
+      .get('/api/v1/opportunities')
+      .expect(401);
+  });
 });
