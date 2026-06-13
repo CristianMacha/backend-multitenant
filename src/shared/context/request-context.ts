@@ -7,6 +7,12 @@ export interface UserContext {
   tenantId: string;
   roles: string[];
   permissions: string[];
+  /**
+   * Platform-level super admin: a global operator that may bypass
+   * role/permission checks and operate across tenants. This is a
+   * property of the user account itself, never a per-tenant role.
+   */
+  isPlatformAdmin: boolean;
 }
 
 export interface RequestContext {

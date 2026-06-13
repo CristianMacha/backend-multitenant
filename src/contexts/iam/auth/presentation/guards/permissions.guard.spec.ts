@@ -51,11 +51,15 @@ describe('PermissionsGuard', () => {
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
 
-  it('bypasses the check for SUPER_ADMIN', () => {
+  it('bypasses the check for platform admins', () => {
     jest
       .spyOn(reflector, 'getAllAndOverride')
       .mockReturnValue(['users.delete']);
-    const context = createContext({ roles: ['SUPER_ADMIN'], permissions: [] });
+    const context = createContext({
+      roles: [],
+      permissions: [],
+      isPlatformAdmin: true,
+    });
     expect(guard.canActivate(context)).toBe(true);
   });
 });

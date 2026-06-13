@@ -36,3 +36,23 @@ export class UpdateTenantDto {
   @IsBoolean()
   isActive?: boolean;
 }
+
+export class TenantResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ example: 'Acme Corporation' })
+  name!: string;
+
+  @ApiProperty({ example: 'acme' })
+  slug!: string;
+
+  @ApiProperty()
+  isActive!: boolean;
+
+  @ApiProperty()
+  createdAt!: Date;
+
+  @ApiProperty()
+  updatedAt!: Date;
+}

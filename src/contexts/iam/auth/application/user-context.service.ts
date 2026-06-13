@@ -72,6 +72,7 @@ export class UserContextService {
       tenantId: user.tenantId,
       roles: roles.map((role) => role.name),
       permissions: [...permissions],
+      isPlatformAdmin: user.isPlatformAdmin,
     };
   }
 }

@@ -31,6 +31,7 @@ model User {
   firstName   String    @map("first_name")
   lastName    String    @map("last_name")
   isActive    Boolean   @default(true) @map("is_active")
+  isPlatformAdmin Boolean @default(false) @map("is_platform_admin")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
@@ -101,6 +102,37 @@ model RolePermission {
 
   @@unique([roleId, permissionId])
   @@map("role_permissions")
+}
+
+model DomainEventOutbox {
+  id          String    @id @default(uuid()) @db.Uuid
+  aggregateId String    @map("aggregate_id")
+  tenantId    String?   @map("tenant_id") @db.Uuid
+  eventId     String    @unique @map("event_id")
+  eventName   String    @map("event_name")
+  payload     Json
+
+  // Actor / request metadata captured at write time (inside the request),
+  // so the background outbox processor can attribute the audit entry even
+  // though it runs outside the request's AsyncLocalStorage context.
+  userId        String? @map("user_id") @db.Uuid
+  correlationId String? @map("correlation_id")
+  ipAddress     String? @map("ip_address")
+  userAgent     String? @map("user_agent")
+
+  // Failure tracking so a poison message stops being retried forever and
+  // does not starve newer events at the head of the queue. Rows with a
+  // non-null failedAt are dead-lettered: excluded from the drain, kept for
+  // inspection and manual replay (clear failedAt/attempts to requeue).
+  attempts  Int       @default(0) @map("attempts")
+  lastError String?   @map("last_error")
+  failedAt  DateTime? @map("failed_at")
+
+  publishedAt DateTime? @map("published_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([publishedAt, createdAt])
+  @@map("domain_event_outbox")
 }
 
 model AuditLog {

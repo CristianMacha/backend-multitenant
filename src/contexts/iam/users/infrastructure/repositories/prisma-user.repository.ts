@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { DomainEvent } from '@shared/domain/domain-event.base';
+import { RoleId, TenantId, UserId } from '@shared/domain/types';
 import { PrismaService } from '@shared/infrastructure/prisma/prisma.service';
+import { writeToOutbox } from '@shared/infrastructure/prisma/outbox.helper';
 import { User } from '../../domain/entities/user.entity';
 import {
   FindUsersOptions,
@@ -11,7 +14,7 @@ import { UserMapper } from '../mappers/user.mapper';
 export class PrismaUserRepository implements UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findById(id: string, tenantId: string): Promise<User | null> {
+  async findById(id: UserId, tenantId: TenantId): Promise<User | null> {
     const user = await this.prisma.user.findFirst({
       where: { id, tenantId, deletedAt: null },
       include: { userRoles: true },
@@ -19,9 +22,9 @@ export class PrismaUserRepository implements UserRepository {
     return user ? UserMapper.toDomain(user) : null;
   }
 
-  async findByEmail(email: string, tenantId: string): Promise<User | null> {
+  async findByEmail(email: string, tenantId: TenantId): Promise<User | null> {
     const user = await this.prisma.user.findFirst({
-      where: { email, tenantId, deletedAt: null },
+      where: { email: email.trim().toLowerCase(), tenantId, deletedAt: null },
       include: { userRoles: true },
     });
     return user ? UserMapper.toDomain(user) : null;
@@ -60,7 +63,7 @@ export class PrismaUserRepository implements UserRepository {
     return { items: users.map((user) => UserMapper.toDomain(user)), total };
   }
 
-  async save(user: User): Promise<void> {
+  async save(user: User, outboxEvents: DomainEvent[] = []): Promise<void> {
     const data = UserMapper.toPersistence(user);
     const roleIds = [...user.roleIds];
 
@@ -75,12 +78,12 @@ export class PrismaUserRepository implements UserRepository {
         where: { userId: user.id },
       });
       const currentRoleIds = new Set(
-        currentRoles.map((userRole) => userRole.roleId),
+        currentRoles.map((ur) => RoleId(ur.roleId)),
       );
 
-      const toAdd = roleIds.filter((roleId) => !currentRoleIds.has(roleId));
+      const toAdd = roleIds.filter((rid) => !currentRoleIds.has(rid));
       const toRemove = [...currentRoleIds].filter(
-        (roleId) => !roleIds.includes(roleId),
+        (rid) => !roleIds.includes(rid),
       );
 
       if (toAdd.length > 0) {
@@ -93,6 +96,8 @@ export class PrismaUserRepository implements UserRepository {
           where: { userId: user.id, roleId: { in: toRemove } },
         });
       }
+
+      await writeToOutbox(tx, outboxEvents);
     });
   }
 }

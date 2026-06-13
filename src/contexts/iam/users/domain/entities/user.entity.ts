@@ -1,5 +1,7 @@
 import { AggregateRoot } from '@shared/domain/aggregate-root.base';
 import { BaseEntityProps } from '@shared/domain/entity.base';
+import { RoleId, TenantId } from '@shared/domain/types';
+import { Email } from '@shared/domain/value-objects/email.vo';
 import { DomainException } from '@shared/exceptions';
 import {
   RoleAssignedEvent,
@@ -9,27 +11,41 @@ import {
 } from '../events/user.events';
 
 export interface UserProps extends BaseEntityProps {
-  tenantId: string;
+  tenantId: TenantId;
+  firebaseUid: string;
+  email: Email;
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  roleIds: RoleId[];
+}
+
+/** Raw props for create — email is a plain string validated and normalized inside. */
+export interface CreateUserProps {
+  tenantId: TenantId;
   firebaseUid: string;
   email: string;
   firstName: string;
   lastName: string;
-  isActive: boolean;
-  roleIds: string[];
 }
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export interface RehydrateUserProps extends Omit<UserProps, 'email'> {
+  email: string;
+}
 
 export class User extends AggregateRoot<UserProps> {
   private constructor(props: UserProps) {
     super(props);
   }
 
-  static create(
-    props: Omit<UserProps, keyof BaseEntityProps | 'isActive' | 'roleIds'>,
-  ): User {
-    User.ensureValidEmail(props.email);
-    const user = new User({ ...props, isActive: true, roleIds: [] });
+  static create(props: CreateUserProps): User {
+    const email = Email.from(props.email);
+    const user = new User({
+      ...props,
+      email,
+      isActive: true,
+      roleIds: [],
+    });
     user.addDomainEvent(
       new UserCreatedEvent(user.id, user.tenantId, user.email),
     );
@@ -37,11 +53,11 @@ export class User extends AggregateRoot<UserProps> {
   }
 
   /** Rehydrates the aggregate from persistence without emitting events. */
-  static fromPersistence(props: UserProps): User {
-    return new User(props);
+  static fromPersistence(props: RehydrateUserProps): User {
+    return new User({ ...props, email: Email.from(props.email) });
   }
 
-  get tenantId(): string {
+  get tenantId(): TenantId {
     return this.props.tenantId;
   }
 
@@ -49,8 +65,9 @@ export class User extends AggregateRoot<UserProps> {
     return this.props.firebaseUid;
   }
 
+  /** Returns the normalized email string. */
   get email(): string {
-    return this.props.email;
+    return this.props.email.getValue();
   }
 
   get firstName(): string {
@@ -69,7 +86,7 @@ export class User extends AggregateRoot<UserProps> {
     return this.props.isActive;
   }
 
-  get roleIds(): readonly string[] {
+  get roleIds(): readonly RoleId[] {
     return this.props.roleIds;
   }
 
@@ -95,21 +112,15 @@ export class User extends AggregateRoot<UserProps> {
     this.addDomainEvent(new UserDeletedEvent(this.id, this.tenantId));
   }
 
-  assignRole(roleId: string): void {
+  assignRole(roleId: RoleId): void {
     if (this.props.roleIds.includes(roleId)) {
       throw new DomainException(
         'Role is already assigned to this user',
         'ROLE_ALREADY_ASSIGNED',
       );
     }
-    this.props.roleIds.push(roleId);
+    this.props.roleIds = [...this.props.roleIds, roleId];
     this.touch();
     this.addDomainEvent(new RoleAssignedEvent(this.id, this.tenantId, roleId));
-  }
-
-  private static ensureValidEmail(email: string): void {
-    if (!EMAIL_REGEX.test(email)) {
-      throw new DomainException(`Invalid email: ${email}`, 'INVALID_EMAIL');
-    }
   }
 }

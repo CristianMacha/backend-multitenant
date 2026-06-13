@@ -10,11 +10,10 @@ import {
   UserContext,
 } from '@shared/context/request-context';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import { SUPER_ADMIN_ROLE } from './roles.guard';
 
 /**
  * Enforces tenant isolation: every authenticated request must resolve
- * to a tenant, and non-SUPER_ADMIN users can only operate within
+ * to a tenant, and non-platform-admin users can only operate within
  * their own tenant.
  */
 @Injectable()
@@ -38,7 +37,7 @@ export class TenantGuard implements CanActivate {
     if (
       requestedTenantId &&
       requestedTenantId !== user.tenantId &&
-      !user.roles.includes(SUPER_ADMIN_ROLE)
+      !user.isPlatformAdmin
     ) {
       throw new ForbiddenException('Cross-tenant access is not allowed');
     }

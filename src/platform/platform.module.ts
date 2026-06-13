@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { CacheModule } from './cache/cache.module';
 import { JobsModule } from './jobs/jobs.module';
 import { HealthModule } from './health/health.module';
+import { OutboxModule } from './outbox/outbox.module';
 
 /**
  * Technical platform services (not bounded contexts): Redis cache,
@@ -9,7 +10,7 @@ import { HealthModule } from './health/health.module';
  * on these, never the other way around.
  */
 @Module({
-  imports: [CacheModule, JobsModule, HealthModule],
+  imports: [CacheModule, JobsModule, HealthModule, OutboxModule],
   exports: [CacheModule, JobsModule],
 })
 export class PlatformModule {}

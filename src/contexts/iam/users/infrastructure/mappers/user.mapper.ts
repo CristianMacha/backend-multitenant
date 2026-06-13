@@ -1,4 +1,5 @@
 import { User as PrismaUser, UserRole as PrismaUserRole } from '@prisma/client';
+import { RoleId, TenantId } from '@shared/domain/types';
 import { User } from '../../domain/entities/user.entity';
 
 type PrismaUserWithRoles = PrismaUser & { userRoles: PrismaUserRole[] };
@@ -7,13 +8,13 @@ export class UserMapper {
   static toDomain(raw: PrismaUserWithRoles): User {
     return User.fromPersistence({
       id: raw.id,
-      tenantId: raw.tenantId,
+      tenantId: TenantId(raw.tenantId),
       firebaseUid: raw.firebaseUid,
       email: raw.email,
       firstName: raw.firstName,
       lastName: raw.lastName,
       isActive: raw.isActive,
-      roleIds: raw.userRoles.map((userRole) => userRole.roleId),
+      roleIds: raw.userRoles.map((ur) => RoleId(ur.roleId)),
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
       deletedAt: raw.deletedAt,
@@ -22,7 +23,7 @@ export class UserMapper {
 
   static toPersistence(
     user: User,
-  ): Omit<PrismaUser, 'createdAt' | 'updatedAt'> {
+  ): Omit<PrismaUser, 'createdAt' | 'updatedAt' | 'isPlatformAdmin'> {
     return {
       id: user.id,
       tenantId: user.tenantId,

@@ -15,23 +15,26 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
   ApiBearerAuth,
-  ApiOkResponse,
   ApiOperation,
+  ApiParam,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { PaginationQueryDto } from '@shared/presentation/dto/pagination.dto';
+import { IdResponseDto } from '@shared/presentation/dto/standard-response.dto';
+import {
+  ApiPaginatedResponse,
+  ApiStandardResponse,
+} from '@shared/presentation/swagger/api-standard-response.decorator';
 import { Permissions } from '@contexts/iam/auth/presentation/decorators/permissions.decorator';
-import { CurrentUser } from '@contexts/iam/auth/presentation/decorators/current-user.decorator';
-import {
-  CreateRoleCommand,
-  DeleteRoleCommand,
-  SetRolePermissionsCommand,
-  UpdateRoleCommand,
-} from '../../application/commands/role.commands';
-import {
-  GetRoleByIdQuery,
-  GetRolesQuery,
-} from '../../application/queries/role.queries';
+import { Perm } from '@shared/authorization/permissions';
+import { EffectiveTenantId } from '@shared/presentation/decorators/effective-tenant-id.decorator';
+import { CreateRoleCommand } from '../../application/create-role/create-role.command';
+import { UpdateRoleCommand } from '../../application/update-role/update-role.command';
+import { DeleteRoleCommand } from '../../application/delete-role/delete-role.command';
+import { SetRolePermissionsCommand } from '../../application/set-role-permissions/set-role-permissions.command';
+import { GetRolesQuery } from '../../application/get-roles/get-roles.query';
+import { GetRoleByIdQuery } from '../../application/get-role-by-id/get-role-by-id.query';
 import {
   CreateRoleDto,
   RoleResponseDto,
@@ -49,11 +52,12 @@ export class RolesController {
   ) {}
 
   @Post()
-  @Permissions('roles.create')
+  @Permissions(Perm.roles.create)
   @ApiOperation({ summary: 'Create a role' })
+  @ApiStandardResponse({ type: IdResponseDto, status: HttpStatus.CREATED })
   async create(
     @Body() dto: CreateRoleDto,
-    @CurrentUser('tenantId') tenantId: string,
+    @EffectiveTenantId() tenantId: string,
   ): Promise<{ id: string }> {
     return this.commandBus.execute(
       new CreateRoleCommand(tenantId, dto.name, dto.description),
@@ -61,12 +65,12 @@ export class RolesController {
   }
 
   @Get()
-  @Permissions('roles.read')
+  @Permissions(Perm.roles.read)
   @ApiOperation({ summary: 'List roles (paginated)' })
-  @ApiOkResponse({ type: [RoleResponseDto] })
+  @ApiPaginatedResponse(RoleResponseDto)
   async findAll(
     @Query() pagination: PaginationQueryDto,
-    @CurrentUser('tenantId') tenantId: string,
+    @EffectiveTenantId() tenantId: string,
   ) {
     return this.queryBus.execute(
       new GetRolesQuery(
@@ -79,36 +83,41 @@ export class RolesController {
   }
 
   @Get(':id')
-  @Permissions('roles.read')
+  @Permissions(Perm.roles.read)
   @ApiOperation({ summary: 'Get a role by id' })
-  @ApiOkResponse({ type: RoleResponseDto })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiStandardResponse({ type: RoleResponseDto })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser('tenantId') tenantId: string,
+    @EffectiveTenantId() tenantId: string,
   ) {
     return this.queryBus.execute(new GetRoleByIdQuery(id, tenantId));
   }
 
   @Patch(':id')
-  @Permissions('roles.update')
+  @Permissions(Perm.roles.update)
   @ApiOperation({ summary: 'Update a role' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT })
   @HttpCode(HttpStatus.NO_CONTENT)
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateRoleDto,
-    @CurrentUser('tenantId') tenantId: string,
+    @EffectiveTenantId() tenantId: string,
   ): Promise<void> {
     await this.commandBus.execute(new UpdateRoleCommand(id, tenantId, dto));
   }
 
   @Put(':id/permissions')
-  @Permissions('roles.update')
+  @Permissions(Perm.roles.update)
   @ApiOperation({ summary: 'Replace the permissions of a role' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT })
   @HttpCode(HttpStatus.NO_CONTENT)
   async setPermissions(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: SetRolePermissionsDto,
-    @CurrentUser('tenantId') tenantId: string,
+    @EffectiveTenantId() tenantId: string,
   ): Promise<void> {
     await this.commandBus.execute(
       new SetRolePermissionsCommand(id, tenantId, dto.permissionIds),
@@ -116,12 +125,14 @@ export class RolesController {
   }
 
   @Delete(':id')
-  @Permissions('roles.delete')
+  @Permissions(Perm.roles.delete)
   @ApiOperation({ summary: 'Soft-delete a role' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT })
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser('tenantId') tenantId: string,
+    @EffectiveTenantId() tenantId: string,
   ): Promise<void> {
     await this.commandBus.execute(new DeleteRoleCommand(id, tenantId));
   }

@@ -37,3 +37,14 @@ export class EntityAlreadyExistsException extends BusinessException {
     );
   }
 }
+
+/**
+ * The actor is authenticated but not allowed to perform this specific
+ * action (e.g. privilege escalation: granting a role/permission they do
+ * not themselves hold, or mutating a protected system role).
+ */
+export class ForbiddenActionException extends BusinessException {
+  constructor(message: string, details?: Record<string, unknown>) {
+    super(message, 'FORBIDDEN_ACTION', HttpStatus.FORBIDDEN, details);
+  }
+}

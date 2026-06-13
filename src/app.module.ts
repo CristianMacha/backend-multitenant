@@ -22,6 +22,7 @@ import { FirebaseAuthGuard } from '@contexts/iam/auth/presentation/guards/fireba
 import { TenantGuard } from '@contexts/iam/auth/presentation/guards/tenant.guard';
 import { RolesGuard } from '@contexts/iam/auth/presentation/guards/roles.guard';
 import { PermissionsGuard } from '@contexts/iam/auth/presentation/guards/permissions.guard';
+import { PlatformAdminGuard } from '@contexts/iam/auth/presentation/guards/platform-admin.guard';
 import { IamContextModule } from '@contexts/iam/iam-context.module';
 import { TenancyContextModule } from '@contexts/tenancy/tenancy-context.module';
 import { AuditContextModule } from '@contexts/audit/audit-context.module';
@@ -87,6 +88,7 @@ import { PlatformModule } from '@platform/platform.module';
     { provide: APP_GUARD, useClass: TenantGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
+    { provide: APP_GUARD, useClass: PlatformAdminGuard },
   ],
 })
 export class AppModule implements NestModule {

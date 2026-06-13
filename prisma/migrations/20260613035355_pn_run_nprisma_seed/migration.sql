@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "domain_event_outbox" ALTER COLUMN "id" DROP DEFAULT,
+ALTER COLUMN "published_at" SET DATA TYPE TIMESTAMP(3),
+ALTER COLUMN "created_at" SET DATA TYPE TIMESTAMP(3);

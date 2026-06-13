@@ -1,45 +1,61 @@
 import { PrismaClient } from '@prisma/client';
+import { Perm } from '@shared/authorization/permissions';
 
 const prisma = new PrismaClient();
 
 const PERMISSIONS = [
-  { code: 'users.create', module: 'users', description: 'Create users' },
-  { code: 'users.read', module: 'users', description: 'Read users' },
-  { code: 'users.update', module: 'users', description: 'Update users' },
-  { code: 'users.delete', module: 'users', description: 'Delete users' },
-  { code: 'roles.create', module: 'roles', description: 'Create roles' },
-  { code: 'roles.read', module: 'roles', description: 'Read roles' },
-  { code: 'roles.update', module: 'roles', description: 'Update roles' },
-  { code: 'roles.delete', module: 'roles', description: 'Delete roles' },
+  { code: Perm.users.create, module: 'users', description: 'Create users' },
+  { code: Perm.users.read, module: 'users', description: 'Read users' },
+  { code: Perm.users.update, module: 'users', description: 'Update users' },
+  { code: Perm.users.delete, module: 'users', description: 'Delete users' },
+  { code: Perm.roles.create, module: 'roles', description: 'Create roles' },
+  { code: Perm.roles.read, module: 'roles', description: 'Read roles' },
+  { code: Perm.roles.update, module: 'roles', description: 'Update roles' },
+  { code: Perm.roles.delete, module: 'roles', description: 'Delete roles' },
   {
-    code: 'permissions.read',
+    code: Perm.permissions.read,
     module: 'permissions',
     description: 'Read permissions',
   },
-  { code: 'tenants.create', module: 'tenants', description: 'Create tenants' },
-  { code: 'tenants.read', module: 'tenants', description: 'Read tenants' },
-  { code: 'tenants.update', module: 'tenants', description: 'Update tenants' },
-  { code: 'tenants.delete', module: 'tenants', description: 'Delete tenants' },
   {
-    code: 'audit-logs.read',
+    code: Perm.tenants.create,
+    module: 'tenants',
+    description: 'Create tenants',
+  },
+  { code: Perm.tenants.read, module: 'tenants', description: 'Read tenants' },
+  {
+    code: Perm.tenants.update,
+    module: 'tenants',
+    description: 'Update tenants',
+  },
+  {
+    code: Perm.tenants.delete,
+    module: 'tenants',
+    description: 'Delete tenants',
+  },
+  {
+    code: Perm.auditLogs.read,
     module: 'audit-logs',
     description: 'Read audit logs',
   },
 ];
 
+// Per-tenant system roles. SUPER_ADMIN is intentionally absent: platform
+// super admins are global operators flagged on the user account
+// (User.isPlatformAdmin), never a per-tenant role. ADMIN is the tenant owner
+// and gets every tenant-scoped permission except tenant management.
 const SYSTEM_ROLES: Record<string, string[]> = {
-  SUPER_ADMIN: PERMISSIONS.map((p) => p.code),
   ADMIN: PERMISSIONS.filter((p) => !p.code.startsWith('tenants.')).map(
     (p) => p.code,
   ),
   MANAGER: [
-    'users.read',
-    'users.update',
-    'roles.read',
-    'permissions.read',
-    'audit-logs.read',
+    Perm.users.read,
+    Perm.users.update,
+    Perm.roles.read,
+    Perm.permissions.read,
+    Perm.auditLogs.read,
   ],
-  USER: ['users.read'],
+  USER: [Perm.users.read],
 };
 
 async function main(): Promise<void> {

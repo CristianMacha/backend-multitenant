@@ -1,5 +1,5 @@
 import { Controller, Get, Inject } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   HealthCheck,
   HealthCheckService,
@@ -9,7 +9,7 @@ import {
 import Redis from 'ioredis';
 import { PrismaService } from '@shared/infrastructure/prisma/prisma.service';
 import { REDIS_CLIENT } from '@platform/cache/infrastructure/redis.provider';
-import { Public } from '@contexts/iam/auth/presentation/decorators/public.decorator';
+import { Public } from '@shared/presentation/decorators/public.decorator';
 
 @ApiTags('Health')
 @Public()
@@ -25,6 +25,21 @@ export class HealthController {
   @Get()
   @HealthCheck()
   @ApiOperation({ summary: 'Full health check (database, redis, memory)' })
+  @ApiResponse({
+    status: 200,
+    description: 'All systems healthy',
+    schema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', example: 'ok' },
+        details: { type: 'object' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 503,
+    description: 'One or more dependencies are down',
+  })
   check() {
     return this.health.check([
       () => this.checkDatabase(),
@@ -36,6 +51,7 @@ export class HealthController {
   @Get('live')
   @HealthCheck()
   @ApiOperation({ summary: 'Liveness probe' })
+  @ApiResponse({ status: 200, description: 'Process is alive' })
   live() {
     return this.health.check([]);
   }
@@ -43,6 +59,11 @@ export class HealthController {
   @Get('ready')
   @HealthCheck()
   @ApiOperation({ summary: 'Readiness probe (dependencies reachable)' })
+  @ApiResponse({ status: 200, description: 'All dependencies reachable' })
+  @ApiResponse({
+    status: 503,
+    description: 'One or more dependencies are down',
+  })
   ready() {
     return this.health.check([
       () => this.checkDatabase(),

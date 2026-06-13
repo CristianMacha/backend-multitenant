@@ -7,7 +7,6 @@ import {
 import { Reflector } from '@nestjs/core';
 import { UserContext } from '@shared/context/request-context';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
-import { SUPER_ADMIN_ROLE } from './roles.guard';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -25,7 +24,7 @@ export class PermissionsGuard implements CanActivate {
       .getRequest<{ user?: UserContext }>();
     if (!user) return false;
 
-    if (user.roles.includes(SUPER_ADMIN_ROLE)) return true;
+    if (user.isPlatformAdmin) return true;
 
     const missing = requiredPermissions.filter(
       (permission) => !user.permissions.includes(permission),

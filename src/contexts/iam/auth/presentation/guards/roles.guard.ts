@@ -8,8 +8,6 @@ import { Reflector } from '@nestjs/core';
 import { UserContext } from '@shared/context/request-context';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 
-export const SUPER_ADMIN_ROLE = 'SUPER_ADMIN';
-
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
@@ -26,7 +24,7 @@ export class RolesGuard implements CanActivate {
       .getRequest<{ user?: UserContext }>();
     if (!user) return false;
 
-    if (user.roles.includes(SUPER_ADMIN_ROLE)) return true;
+    if (user.isPlatformAdmin) return true;
 
     const hasRole = requiredRoles.some((role) => user.roles.includes(role));
     if (!hasRole) {

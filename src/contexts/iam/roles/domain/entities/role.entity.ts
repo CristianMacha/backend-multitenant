@@ -85,6 +85,7 @@ export class Role extends AggregateRoot<RoleProps> {
   }
 
   setPermissions(permissionIds: string[]): void {
+    this.ensureNotSystem('modified');
     this.props.permissionIds = [...new Set(permissionIds)];
     this.touch();
     this.addDomainEvent(

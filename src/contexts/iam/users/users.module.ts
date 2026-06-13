@@ -4,13 +4,13 @@ import { AuthModule } from '@contexts/iam/auth/auth.module';
 import { USER_REPOSITORY } from './domain/repositories/user.repository';
 import { PrismaUserRepository } from './infrastructure/repositories/prisma-user.repository';
 import { UsersController } from './presentation/controllers/users.controller';
-import { CreateUserHandler } from './application/handlers/create-user.handler';
-import { UpdateUserHandler } from './application/handlers/update-user.handler';
-import { DeleteUserHandler } from './application/handlers/delete-user.handler';
-import { AssignRoleHandler } from './application/handlers/assign-role.handler';
-import { GetUserByIdHandler } from './application/handlers/get-user-by-id.handler';
-import { GetUsersHandler } from './application/handlers/get-users.handler';
-import { InvalidateUserCacheHandler } from './application/event-handlers/invalidate-user-cache.handler';
+import { CreateUserHandler } from './application/create-user/create-user.handler';
+import { UpdateUserHandler } from './application/update-user/update-user.handler';
+import { DeleteUserHandler } from './application/delete-user/delete-user.handler';
+import { AssignRoleHandler } from './application/assign-role/assign-role.handler';
+import { GetUsersHandler } from './application/get-users/get-users.handler';
+import { GetUserByIdHandler } from './application/get-user-by-id/get-user-by-id.handler';
+import { InvalidateUserCacheHandler } from './application/on-user-mutated/invalidate-user-cache.handler';
 
 const commandHandlers = [
   CreateUserHandler,
@@ -18,7 +18,7 @@ const commandHandlers = [
   DeleteUserHandler,
   AssignRoleHandler,
 ];
-const queryHandlers = [GetUserByIdHandler, GetUsersHandler];
+const queryHandlers = [GetUsersHandler, GetUserByIdHandler];
 const eventHandlers = [InvalidateUserCacheHandler];
 
 @Module({

@@ -14,19 +14,26 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
   ApiBearerAuth,
-  ApiOkResponse,
   ApiOperation,
+  ApiParam,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { PaginationQueryDto } from '@shared/presentation/dto/pagination.dto';
+import { IdResponseDto } from '@shared/presentation/dto/standard-response.dto';
+import {
+  ApiPaginatedResponse,
+  ApiStandardResponse,
+} from '@shared/presentation/swagger/api-standard-response.decorator';
+import { EffectiveTenantId } from '@shared/presentation/decorators/effective-tenant-id.decorator';
 import { Permissions } from '@contexts/iam/auth/presentation/decorators/permissions.decorator';
-import { CurrentUser } from '@contexts/iam/auth/presentation/decorators/current-user.decorator';
-import { CreateUserCommand } from '../../application/commands/create-user.command';
-import { UpdateUserCommand } from '../../application/commands/update-user.command';
-import { DeleteUserCommand } from '../../application/commands/delete-user.command';
-import { AssignRoleCommand } from '../../application/commands/assign-role.command';
-import { GetUserByIdQuery } from '../../application/queries/get-user-by-id.query';
-import { GetUsersQuery } from '../../application/queries/get-users.query';
+import { Perm } from '@shared/authorization/permissions';
+import { CreateUserCommand } from '../../application/create-user/create-user.command';
+import { UpdateUserCommand } from '../../application/update-user/update-user.command';
+import { DeleteUserCommand } from '../../application/delete-user/delete-user.command';
+import { AssignRoleCommand } from '../../application/assign-role/assign-role.command';
+import { GetUserByIdQuery } from '../../application/get-user-by-id/get-user-by-id.query';
+import { GetUsersQuery } from '../../application/get-users/get-users.query';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { AssignRoleDto } from '../dto/assign-role.dto';
@@ -42,11 +49,12 @@ export class UsersController {
   ) {}
 
   @Post()
-  @Permissions('users.create')
+  @Permissions(Perm.users.create)
   @ApiOperation({ summary: 'Create a user in the current tenant' })
+  @ApiStandardResponse({ type: IdResponseDto, status: HttpStatus.CREATED })
   async create(
     @Body() dto: CreateUserDto,
-    @CurrentUser('tenantId') tenantId: string,
+    @EffectiveTenantId() tenantId: string,
   ): Promise<{ id: string }> {
     return this.commandBus.execute(
       new CreateUserCommand(
@@ -60,12 +68,12 @@ export class UsersController {
   }
 
   @Get()
-  @Permissions('users.read')
+  @Permissions(Perm.users.read)
   @ApiOperation({ summary: 'List users (paginated)' })
-  @ApiOkResponse({ type: [UserResponseDto] })
+  @ApiPaginatedResponse(UserResponseDto)
   async findAll(
     @Query() pagination: PaginationQueryDto,
-    @CurrentUser('tenantId') tenantId: string,
+    @EffectiveTenantId() tenantId: string,
   ) {
     return this.queryBus.execute(
       new GetUsersQuery(
@@ -78,47 +86,54 @@ export class UsersController {
   }
 
   @Get(':id')
-  @Permissions('users.read')
+  @Permissions(Perm.users.read)
   @ApiOperation({ summary: 'Get a user by id' })
-  @ApiOkResponse({ type: UserResponseDto })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiStandardResponse({ type: UserResponseDto })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser('tenantId') tenantId: string,
+    @EffectiveTenantId() tenantId: string,
   ) {
     return this.queryBus.execute(new GetUserByIdQuery(id, tenantId));
   }
 
   @Patch(':id')
-  @Permissions('users.update')
+  @Permissions(Perm.users.update)
   @ApiOperation({ summary: 'Update a user' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT })
   @HttpCode(HttpStatus.NO_CONTENT)
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto,
-    @CurrentUser('tenantId') tenantId: string,
+    @EffectiveTenantId() tenantId: string,
   ): Promise<void> {
     await this.commandBus.execute(new UpdateUserCommand(id, tenantId, dto));
   }
 
   @Delete(':id')
-  @Permissions('users.delete')
+  @Permissions(Perm.users.delete)
   @ApiOperation({ summary: 'Soft-delete a user' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT })
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser('tenantId') tenantId: string,
+    @EffectiveTenantId() tenantId: string,
   ): Promise<void> {
     await this.commandBus.execute(new DeleteUserCommand(id, tenantId));
   }
 
   @Post(':id/roles')
-  @Permissions('users.update', 'roles.read')
+  @Permissions(Perm.users.update, Perm.roles.read)
   @ApiOperation({ summary: 'Assign a role to a user' })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'User id' })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT })
   @HttpCode(HttpStatus.NO_CONTENT)
   async assignRole(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AssignRoleDto,
-    @CurrentUser('tenantId') tenantId: string,
+    @EffectiveTenantId() tenantId: string,
   ): Promise<void> {
     await this.commandBus.execute(
       new AssignRoleCommand(id, dto.roleId, tenantId),

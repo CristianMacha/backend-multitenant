@@ -7,6 +7,7 @@ import { FirebaseAuthGuard } from './presentation/guards/firebase-auth.guard';
 import { RolesGuard } from './presentation/guards/roles.guard';
 import { PermissionsGuard } from './presentation/guards/permissions.guard';
 import { TenantGuard } from './presentation/guards/tenant.guard';
+import { PlatformAdminGuard } from './presentation/guards/platform-admin.guard';
 
 @Module({
   imports: [PassportModule],
@@ -18,6 +19,7 @@ import { TenantGuard } from './presentation/guards/tenant.guard';
     RolesGuard,
     PermissionsGuard,
     TenantGuard,
+    PlatformAdminGuard,
   ],
   exports: [
     UserContextService,
@@ -25,6 +27,7 @@ import { TenantGuard } from './presentation/guards/tenant.guard';
     RolesGuard,
     PermissionsGuard,
     TenantGuard,
+    PlatformAdminGuard,
   ],
 })
 export class AuthModule {}

@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Role as PrismaRole, RolePermission } from '@prisma/client';
+import { DomainEvent } from '@shared/domain/domain-event.base';
+import { RoleId, TenantId } from '@shared/domain/types';
 import { PrismaService } from '@shared/infrastructure/prisma/prisma.service';
+import { writeToOutbox } from '@shared/infrastructure/prisma/outbox.helper';
 import { Role } from '../../domain/entities/role.entity';
 import { RoleRepository } from '../../domain/repositories/role.repository';
 
@@ -15,9 +18,7 @@ const toDomain = (raw: PrismaRoleWithPermissions): Role =>
     name: raw.name,
     description: raw.description,
     isSystem: raw.isSystem,
-    permissionIds: raw.rolePermissions.map(
-      (rolePermission) => rolePermission.permissionId,
-    ),
+    permissionIds: raw.rolePermissions.map((rp) => rp.permissionId),
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
     deletedAt: raw.deletedAt,
@@ -27,7 +28,7 @@ const toDomain = (raw: PrismaRoleWithPermissions): Role =>
 export class PrismaRoleRepository implements RoleRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findById(id: string, tenantId: string): Promise<Role | null> {
+  async findById(id: RoleId, tenantId: TenantId): Promise<Role | null> {
     const role = await this.prisma.role.findFirst({
       where: { id, tenantId, deletedAt: null },
       include: { rolePermissions: true },
@@ -35,7 +36,7 @@ export class PrismaRoleRepository implements RoleRepository {
     return role ? toDomain(role) : null;
   }
 
-  async findByName(name: string, tenantId: string): Promise<Role | null> {
+  async findByName(name: string, tenantId: TenantId): Promise<Role | null> {
     const role = await this.prisma.role.findFirst({
       where: { name, tenantId, deletedAt: null },
       include: { rolePermissions: true },
@@ -43,7 +44,7 @@ export class PrismaRoleRepository implements RoleRepository {
     return role ? toDomain(role) : null;
   }
 
-  async save(role: Role): Promise<void> {
+  async save(role: Role, outboxEvents: DomainEvent[] = []): Promise<void> {
     const data = {
       id: role.id,
       tenantId: role.tenantId,
@@ -64,9 +65,7 @@ export class PrismaRoleRepository implements RoleRepository {
       const current = await tx.rolePermission.findMany({
         where: { roleId: role.id },
       });
-      const currentIds = new Set(
-        current.map((rolePermission) => rolePermission.permissionId),
-      );
+      const currentIds = new Set(current.map((rp) => rp.permissionId));
 
       const toAdd = permissionIds.filter((id) => !currentIds.has(id));
       const toRemove = [...currentIds].filter(
@@ -86,6 +85,8 @@ export class PrismaRoleRepository implements RoleRepository {
           where: { roleId: role.id, permissionId: { in: toRemove } },
         });
       }
+
+      await writeToOutbox(tx, outboxEvents);
     });
   }
 }

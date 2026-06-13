@@ -3,9 +3,12 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@shared/infrastructure/prisma/prisma.service';
 import { PaginatedResultDto } from '@shared/presentation/dto/pagination.dto';
+import { ApiPaginatedResponse } from '@shared/presentation/swagger/api-standard-response.decorator';
 import { Permissions } from '@contexts/iam/auth/presentation/decorators/permissions.decorator';
+import { Perm } from '@shared/authorization/permissions';
 import { CurrentUser } from '@contexts/iam/auth/presentation/decorators/current-user.decorator';
 import { AuditLogsQueryDto } from '../dto/audit-logs-query.dto';
+import { AuditLogResponseDto } from '../dto/audit-log-response.dto';
 
 @ApiTags('Audit Logs')
 @ApiBearerAuth()
@@ -14,8 +17,9 @@ export class AuditLogsController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
-  @Permissions('audit-logs.read')
+  @Permissions(Perm.auditLogs.read)
   @ApiOperation({ summary: 'Query audit logs (paginated)' })
+  @ApiPaginatedResponse(AuditLogResponseDto)
   async findAll(
     @Query() query: AuditLogsQueryDto,
     @CurrentUser('tenantId') tenantId: string,
