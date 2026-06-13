@@ -29,26 +29,37 @@ src/
 │   │   ├── roles/             # Gestión de roles y sus permisos (RBAC)
 │   │   ├── permissions/       # Catálogo de permisos (cacheado en Redis)
 │   │   └── iam-context.module.ts
-│   ├── tenancy/               # Ciclo de vida de tenants (solo SUPER_ADMIN)
-│   └── audit/                 # Auditoría automática vía domain events
+│   ├── tenancy/               # Ciclo de vida de tenants (solo platform admin, @PlatformAdmin())
+│   └── audit/                 # Consulta de audit_logs (la escritura vive en platform/outbox)
 ├── platform/                  # Servicios técnicos (no son bounded contexts)
 │   ├── cache/                 # CacheService (cache-aside, invalidación por patrón)
 │   ├── jobs/                  # BullMQ: emails, notifications, reports, integrations
+│   ├── outbox/                # Outbox transaccional → audit trail (fuente de verdad)
 │   ├── health/                # /health, /health/live, /health/ready (Terminus)
 │   └── platform.module.ts
 ├── shared/                    # Shared kernel: bases DDD, excepciones, ALS, filtros
 └── config/                    # Configuración tipada + validación Joi
 ```
 
-Cada módulo dentro de un contexto sigue las 4 capas:
+Cada módulo dentro de un contexto sigue las 4 capas, con `application/`
+organizado en **slices verticales** (una carpeta por caso de uso):
 
 ```text
 module/
-├── application/     # Commands, Queries, Handlers, Event Handlers, Read Models
+├── application/     # Un folder por caso de uso (slice vertical):
+│   ├── create-user/         # create-user.command.ts + .handler.ts + .handler.spec.ts
+│   ├── get-users/           # get-users.query.ts + .handler.ts
+│   ├── on-user-mutated/     # event handlers agrupados por trigger (ej. invalidar cache)
+│   └── user.read-model.ts   # read model compartido (interface + toXReadModel)
 ├── domain/          # Aggregates, Entities, Value Objects, Domain Events, Repository ports
-├── infrastructure/  # Prisma repositories, mappers, providers externos
+├── infrastructure/  # Prisma repositories, mappers (write-path), providers externos
 └── presentation/    # Controllers, DTOs, Guards, Decorators
 ```
+
+> **Write vs read paths** difieren a propósito: los command handlers pasan por el
+> puerto del repositorio y el agregado de dominio (que emite eventos); los query
+> handlers bypassean el dominio y usan `PrismaService` directo, devolviendo read
+> models.
 
 Reglas de dependencia entre contextos:
 
@@ -58,21 +69,35 @@ Reglas de dependencia entre contextos:
 
 Principios aplicados: SOLID, Event-Driven (EventBus de `@nestjs/cqrs`, contratos de eventos listos para Kafka/RabbitMQ/NATS), inversión de dependencias mediante puertos (`USER_REPOSITORY`, `ROLE_REPOSITORY`).
 
+### Bloques clave (shared kernel / platform)
+
+- **Outbox transaccional** (`platform/outbox`) — fuente de verdad del audit trail (ver [Auditoría](#auditoría)).
+- **Branded types** para ids (`TenantId`, `UserId`, `RoleId`, `PermissionId` en `@shared/domain/types`) — previenen bugs de orden de parámetros; se castean en los bordes con las factory functions.
+- **`Email` value object** (`@shared/domain/value-objects`) — normaliza a `trim().toLowerCase()`; el getter devuelve `string` plano.
+- **`PrismaService` tenant-aware facade** — proxya cada llamada al cliente que resuelve `TenantClientResolver` para el tenant del request (hoy DB compartida; migrar a schema/DB por tenant no toca los call sites).
+- **`UnitOfWork`** (`@shared/infrastructure/prisma`) — envuelve un lambda en una sola transacción Prisma vía ALS; úsalo cuando un handler debe tocar dos agregados atómicamente.
+- **`@PlatformAdmin()` + `PlatformAdminGuard`**, **`@EffectiveTenantId()`**, y los decoradores Swagger `@ApiStandardResponse` / `@ApiPaginatedResponse` (documentan el envelope real `{success, data, message}`).
+
 ## Flujo de autenticación
 
 1. El frontend se autentica contra Firebase y obtiene un ID token (JWT).
 2. Envía `Authorization: Bearer <token>` al backend.
 3. `FirebaseJwtStrategy` valida el token con Firebase Admin SDK.
 4. `UserContextService` construye el `UserContext` (usuario + roles + permisos) desde PostgreSQL, con cache en Redis (TTL 120s).
-5. Guards globales aplican, en orden: throttling → autenticación → aislamiento de tenant → roles → permisos.
+5. Guards globales aplican, en orden: **Throttler → FirebaseAuth → Tenant → Roles → Permissions → PlatformAdmin**.
 
-> El usuario debe existir en la tabla `users` (vinculado por `firebase_uid`). `SUPER_ADMIN` puede operar cross-tenant enviando el header `x-tenant-id`.
+> El usuario debe existir en la tabla `users` (vinculado por `firebase_uid`).
+> Un **platform super admin** —operador global identificado por el flag
+> `User.isPlatformAdmin` (lo asigna únicamente `scripts/bootstrap-super-admin.ts`)—
+> bypassea las verificaciones de rol/permiso y puede operar cross-tenant enviando
+> el header `x-tenant-id`. **No es un rol per-tenant.**
 
 ## Multi-tenant
 
 - Todas las entidades de negocio llevan `tenant_id`.
-- `TenantMiddleware` captura `x-tenant-id`; `TenantGuard` impide acceso cross-tenant a usuarios no SUPER_ADMIN.
+- `TenantMiddleware` captura `x-tenant-id`; `TenantGuard` impide acceso cross-tenant a quien no sea platform admin.
 - El tenant efectivo vive en `RequestContextStorage` (AsyncLocalStorage), accesible desde cualquier capa.
+- En controllers que un platform admin pueda llamar cross-tenant, usar `@EffectiveTenantId()` (devuelve el tenant del header `x-tenant-id` para platform admins, y el tenant propio para el resto) en vez de `@CurrentUser('tenantId')`.
 
 ## Convenciones de API
 
@@ -98,7 +123,11 @@ docker compose up -d postgres redis
 pnpm prisma:migrate     # aplica migraciones
 pnpm prisma:seed        # tenant default, permisos y roles del sistema
 
-# 5. Desarrollo
+# 5. Primer platform super admin (one-time, tras el seed)
+FIREBASE_UID=<uid> EMAIL=<email> FIRST_NAME=Admin LAST_NAME=User \
+  npx ts-node -r tsconfig-paths/register scripts/bootstrap-super-admin.ts
+
+# 6. Desarrollo
 pnpm start:dev          # http://localhost:3000/api/v1 — docs en /api/docs
 ```
 
@@ -123,11 +152,18 @@ docker compose up -d --build
 - Helmet, CORS configurable (`CORS_ORIGIN`), rate limiting (`@nestjs/throttler`).
 - `ValidationPipe` global con `whitelist` + `forbidNonWhitelisted` (sanitización de entrada).
 - Headers sensibles redactados en logs (`authorization`, `cookie`).
-- RBAC + permisos granulares (`users.create`, `roles.update`, ...). Roles del sistema: `SUPER_ADMIN`, `ADMIN`, `MANAGER`, `USER`.
+- RBAC + permisos granulares (`users.create`, `roles.update`, ...). Roles del sistema (per-tenant): `ADMIN`, `MANAGER`, `USER`. `ADMIN` es el rol tope del tenant (recibe todos los permisos del tenant **excepto** `tenants.*`). El **platform super admin** es global (flag `isPlatformAdmin`), no un rol.
+- **Sin escalada de privilegios**: un no-platform-admin nunca puede otorgar autoridad que no posee. `assertCanGrantPermissions()` (de `@shared/authorization`) lo aplica en los handlers de asignar roles y editar permisos de un rol. Los roles `isSystem` son inmutables.
 
 ## Auditoría
 
-Cada domain event publicado (creación/actualización/borrado de usuarios y roles, asignación de roles) se persiste en `audit_logs` con: usuario, acción, entidad, valores nuevos, IP, user agent y correlation id. Consulta vía `GET /api/v1/audit-logs` (permiso `audit-logs.read`).
+La auditoría usa un **outbox transaccional** (fuente de verdad, nunca pierde entradas):
+
+1. Tras `repository.save(aggregate, events)`, los domain events se escriben en `domain_event_outbox` **en la misma transacción** del DB.
+2. `OutboxPublisherProcessor` (BullMQ, cada 10s) drena las entradas no publicadas y escribe en `audit_logs` vía `AuditLogService` (en `platform/outbox/`).
+3. En paralelo, el `EventBus` in-process despacha de inmediato a los handlers de baja latencia (ej. invalidación de cache).
+
+Cada entrada guarda: usuario, acción, entidad, valores nuevos, IP, user agent y correlation id (el contexto del actor se captura al escribir el outbox, dentro del request). Consulta vía `GET /api/v1/audit-logs` (permiso `audit-logs.read`).
 
 ## Observabilidad
 
@@ -138,11 +174,13 @@ Cada domain event publicado (creación/actualización/borrado de usuarios y role
 ## Extender el core (nuevo bounded context de negocio)
 
 1. Crear `src/contexts/<contexto>/<modulo>` con las 4 capas y un `<contexto>-context.module.ts` agregador (ej. `contexts/inventory/products/`).
-2. Modelar el agregado extendiendo `AggregateRoot` y emitir domain events.
-3. Definir el puerto del repositorio (interfaz + `Symbol`) en `domain/` e implementarlo con Prisma en `infrastructure/`.
-4. Commands/Queries/Handlers en `application/`; controller + DTOs en `presentation/`.
-5. Registrar permisos del módulo en `prisma/seed.ts` y proteger rutas con `@Permissions(...)`.
+2. Modelar el agregado extendiendo `AggregateRoot`, emitir domain events en cada mutación y usar **branded types** (`TenantId`, `UserId`, …) en props y puertos.
+3. Definir el puerto del repositorio (interfaz + `Symbol`) en `domain/` e implementarlo con Prisma en `infrastructure/`; el `save()` llama a `writeToOutbox(tx, events)` dentro de su transacción.
+4. Estructurar `application/` en **slices verticales** (una carpeta por caso de uso); cada handler hace `pullDomainEvents()` **antes** de `save()`, lo pasa como 2º arg y luego `eventBus.publishAll(events)`. Controller + DTOs en `presentation/`: proteger rutas con `@Permissions(Perm.x.y)` (gatear rutas platform-only con `@PlatformAdmin()`), resolver tenant con `@EffectiveTenantId()` y documentar respuestas con `@ApiStandardResponse`/`@ApiPaginatedResponse`.
+5. Registrar permisos del módulo en `prisma/seed.ts` (usando `Perm`) y proteger rutas con `@Permissions(...)`. Si el módulo asigna roles o edita permisos, llamar `assertCanGrantPermissions()`.
 6. Importar el `*-context.module.ts` en `AppModule`. Para integrarse con otros contextos, suscribirse a sus domain events — nunca importar sus internals.
+
+> Atajo: el skill `/new-module <contexto> <modulo>` scaffoldea todo este patrón a partir del módulo `users` como plantilla canónica.
 
 ## CI/CD
 

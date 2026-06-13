@@ -19,10 +19,11 @@ Determine what changed with `git diff` / `git status` (or review the files the c
 - Exception currently tolerated: importing another context's domain **event classes** (events are published contracts). Flag anything else — entities, repositories, services, mappers.
 - `src/platform/` and `src/shared/` must never import from `src/contexts/`.
 - Quick scan: `grep -rn "@contexts/" src/platform src/shared` must return nothing; for each context, grep for imports of sibling contexts.
+- Note: the audit **write** path (`AuditLogService`) now lives in `src/platform/outbox/`, driven by the `OutboxPublisherProcessor`; the `audit` context only **reads** `audit_logs` (controller + query handlers). This is intentional — do not flag the relocation or treat `audit` as an event-subscribing context.
 
 ### 2. Multi-tenant isolation
 
-- Every Prisma query against business tables (users, roles, user_roles via relations, audit_logs) must filter by `tenantId` unless the operation is explicitly SUPER_ADMIN/cross-tenant (tenants module) or keyed by a globally-unique field (`firebaseUid`, permission `code`).
+- Every Prisma query against business tables (users, roles, user_roles via relations, audit_logs) must filter by `tenantId` unless the operation is an explicit platform-admin / cross-tenant operation (tenants module, `@PlatformAdmin()`) or keyed by a globally-unique field (`firebaseUid`, permission `code`).
 - Repository methods and query handlers must take `tenantId` as a parameter — never trust an ID alone.
 
 ### 3. Soft delete
@@ -30,10 +31,14 @@ Determine what changed with `git diff` / `git status` (or review the files the c
 - Read queries must include `deletedAt: null`.
 - Deletions must be soft (`softDelete()` on the aggregate or `update { deletedAt }`), never `prisma.<model>.delete/deleteMany` on business entities (join tables `user_roles`/`role_permissions` are exempt).
 
-### 4. Domain events and audit trail
+### 4. Domain events, outbox and audit trail
 
-- Every aggregate mutation in a command handler must follow the pattern: mutate aggregate (which calls `addDomainEvent`) → `repository.save()` → `eventBus.publishAll(aggregate.pullDomainEvents())`. A save without publishing, or a mutation method on an aggregate that emits no event, silently breaks the audit context.
-- New domain events should be added to `DomainEventsAuditHandler` in `src/contexts/audit/audit-logs/application/event-handlers/` if they represent auditable actions.
+The audit trail is driven by a **transactional outbox**, not an in-process event handler. Enforce the write-path pattern:
+
+- A command handler that mutates an aggregate must call `pullDomainEvents()` **before** `save()` and pass the events as the second arg: `const events = aggregate.pullDomainEvents(); await repository.save(aggregate, events); this.eventBus.publishAll(events);`. The `save(aggregate, events)` persists the events to the outbox in the same transaction; `publishAll` is the in-process fast path (cache invalidation, etc.).
+- The repository's `save(entity, outboxEvents = [])` MUST call `writeToOutbox(tx, outboxEvents)` (from `@shared/infrastructure/prisma/outbox.helper`) **inside the same `$transaction`** as the aggregate upsert. A `save()` that ignores its `outboxEvents` argument, or a handler that calls `save(aggregate)` without passing the pulled events, silently drops the audit trail — flag it.
+- A mutation method on an aggregate that emits no domain event (no `addDomainEvent(...)`) also breaks auditing — flag it.
+- Do **NOT** require registering events in any handler for auditing. `DomainEventsAuditHandler` was **removed**; the `OutboxPublisherProcessor` (`src/platform/outbox/`) processes every event generically via `eventName`. Flagging a "missing audit handler registration" is wrong — do not do it.
 
 ### 5. Endpoint protection
 
@@ -42,7 +47,7 @@ Determine what changed with `git diff` / `git status` (or review the files the c
 
 ### 6. Auth cache coherence
 
-- Any change that affects a user's roles or permissions (assigning roles, changing role permissions, deactivating users) must invalidate the Redis-cached UserContext (`userContextCacheKey(firebaseUid)` — see `InvalidateUserCacheHandler`). Check that the corresponding domain event is covered by a cache-invalidation handler.
+- Any change that affects a user's roles or permissions (assigning roles, changing role permissions, deactivating users) must invalidate the Redis-cached UserContext (`userContextCacheKey(firebaseUid)` — see `invalidate-user-cache.handler.ts`, now in the per-trigger slice folder `application/on-user-mutated/`, not in `application/event-handlers/`). Check that the corresponding domain event is covered by a cache-invalidation handler.
 
 ### 7. Error handling and API contract
 
@@ -55,11 +60,22 @@ Determine what changed with `git diff` / `git status` (or review the files the c
 - `domain/` imports nothing from `application/`, `infrastructure/`, or `presentation/`, and nothing from NestJS except nothing at all ideally (pure TS + `@shared/domain`).
 - Command handlers go through the repository port (Symbol token); query handlers may use `PrismaService` directly (CQRS read side) — that is intentional, do not flag it.
 - New Prisma models: UUID pk, `tenant_id`, `created_at`/`updated_at`/`deleted_at`, snake_case `@@map`.
+- Repository ports and aggregate props must use the **branded id types** (`TenantId`, `UserId`, `RoleId`, `PermissionId` from `@shared/domain/types`), not raw `string`, to prevent parameter-order bugs. Raw strings are cast at system boundaries (handlers, mappers) via the factory functions (`TenantId(raw)`). Flag a new repository port or entity prop typing ids as bare `string`.
 
 ### 9. Configuration drift
 
 - If path aliases changed, all three must be in sync: `tsconfig.json` paths, `package.json` jest `moduleNameMapper`, `test/jest-e2e.json` moduleNameMapper.
 - New env vars must appear in all of: `src/config/configuration.ts`, `src/config/env.validation.ts`, `.env.sample`, and `docker-compose.yml` if the API container needs them.
+
+### 10. No privilege escalation via role management
+
+- Any handler that assigns roles to a user, or sets/edits a role's permissions, MUST call `assertCanGrantPermissions(...)` (from `@shared/authorization`) so a non-platform-admin can't grant authority they don't hold. Flag any new assign-role / set-role-permissions handler that omits the assertion.
+- System roles (`isSystem`) are immutable: the `Role` aggregate must reject `update`/`delete`/`setPermissions` on them. Flag a mutation path that can reach a system role.
+
+### 11. Platform admin & cross-tenant boundary
+
+- Routes that manage tenants or operate across tenants must be gated with `@PlatformAdmin()` (enforced by `PlatformAdminGuard`, last in the global guard chain). The platform super admin is the global `User.isPlatformAdmin` flag, **never** a per-tenant role — flag any reintroduction of a `SUPER_ADMIN` role (seed, `@Roles('SUPER_ADMIN')`, role creation).
+- Controllers a platform admin may call across tenants must resolve the tenant with `@EffectiveTenantId()`, not `@CurrentUser('tenantId')` — otherwise the cross-tenant `x-tenant-id` header is ignored and the operation silently targets the admin's own tenant. Flag `@CurrentUser('tenantId')` in tenant-crossing controllers.
 
 ## Report format
 
@@ -69,4 +85,4 @@ Return a concise report:
 2. **Violations** (if any): one entry per finding with `file:line`, the rule number, what's wrong, and the minimal fix. Order by severity: tenant isolation and missing auth first, style-adjacent last.
 3. **Not checked**: anything you could not verify and why.
 
-Be precise and low-noise: only report real rule violations with file:line evidence, not stylistic preferences. If a pattern looks intentional (e.g., a deliberate cross-tenant SUPER_ADMIN operation), say so instead of flagging it.
+Be precise and low-noise: only report real rule violations with file:line evidence, not stylistic preferences. If a pattern looks intentional (e.g., a deliberate cross-tenant platform-admin operation gated with `@PlatformAdmin()`), say so instead of flagging it.
