@@ -16,11 +16,13 @@ model Tenant {
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  users     User[]
-  roles     Role[]
-  auditLogs AuditLog[]
-  accounts  Account[]
-  contacts  Contact[]
+  users         User[]
+  roles         Role[]
+  auditLogs     AuditLog[]
+  accounts      Account[]
+  contacts      Contact[]
+  pipelines     Pipeline[]
+  opportunities Opportunity[]
 
   @@map("tenants")
 }
@@ -158,6 +160,93 @@ model Contact {
   @@index([tenantId, ownerId])
   @@index([tenantId, accountId])
   @@map("contacts")
+}
+
+// --- Sales bounded context (sales) ---
+
+enum StageType {
+  OPEN
+  WON
+  LOST
+
+  @@map("stage_type")
+}
+
+enum OpportunityStatus {
+  OPEN
+  WON
+  LOST
+
+  @@map("opportunity_status")
+}
+
+model Pipeline {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  name      String
+  isDefault Boolean   @default(false) @map("is_default")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+  stages        Stage[]
+  opportunities Opportunity[]
+
+  @@index([tenantId])
+  @@map("pipelines")
+}
+
+// Stage is an aggregate-internal entity of Pipeline (like user_roles for User):
+// it is synced within the Pipeline save transaction and hard-removed when the
+// pipeline drops it, so it carries no soft-delete column.
+model Stage {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  pipelineId  String    @map("pipeline_id") @db.Uuid
+  name        String
+  order       Int
+  probability Int
+  type        StageType
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  pipeline      Pipeline      @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  opportunities Opportunity[]
+
+  @@index([tenantId])
+  @@index([pipelineId])
+  @@map("stages")
+}
+
+model Opportunity {
+  id                String            @id @default(uuid()) @db.Uuid
+  tenantId          String            @map("tenant_id") @db.Uuid
+  name              String
+  accountId         String            @map("account_id") @db.Uuid
+  contactId         String?           @map("contact_id") @db.Uuid
+  pipelineId        String            @map("pipeline_id") @db.Uuid
+  stageId           String            @map("stage_id") @db.Uuid
+  amount            Decimal           @default(0) @db.Decimal(14, 2)
+  currency          String            @db.VarChar(3)
+  expectedCloseDate DateTime?         @map("expected_close_date")
+  ownerId           String            @map("owner_id") @db.Uuid
+  status            OpportunityStatus @default(OPEN)
+  closedAt          DateTime?         @map("closed_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  deletedAt         DateTime?         @map("deleted_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  pipeline Pipeline @relation(fields: [pipelineId], references: [id])
+  stage    Stage    @relation(fields: [stageId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, pipelineId, stageId])
+  @@index([tenantId, ownerId])
+  @@index([tenantId, status])
+  @@index([tenantId, contactId])
+  @@map("opportunities")
 }
 
 model DomainEventOutbox {

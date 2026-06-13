@@ -80,6 +80,53 @@ const PERMISSIONS = [
     module: 'contacts',
     description: 'Delete contacts',
   },
+  // --- Sales: pipelines (Phase 2) ---
+  {
+    code: Perm.pipelines.create,
+    module: 'pipelines',
+    description: 'Create pipelines',
+  },
+  {
+    code: Perm.pipelines.read,
+    module: 'pipelines',
+    description: 'Read pipelines',
+  },
+  {
+    code: Perm.pipelines.update,
+    module: 'pipelines',
+    description: 'Update pipelines',
+  },
+  {
+    code: Perm.pipelines.delete,
+    module: 'pipelines',
+    description: 'Delete pipelines',
+  },
+  // --- Sales: opportunities (Phase 2) ---
+  {
+    code: Perm.opportunities.create,
+    module: 'opportunities',
+    description: 'Create opportunities',
+  },
+  {
+    code: Perm.opportunities.read,
+    module: 'opportunities',
+    description: 'Read opportunities',
+  },
+  {
+    code: Perm.opportunities.update,
+    module: 'opportunities',
+    description: 'Update opportunities',
+  },
+  {
+    code: Perm.opportunities.delete,
+    module: 'opportunities',
+    description: 'Delete opportunities',
+  },
+  {
+    code: Perm.opportunities.reassign,
+    module: 'opportunities',
+    description: 'Reassign opportunities',
+  },
 ];
 
 // Per-tenant system roles. SUPER_ADMIN is intentionally absent: platform
@@ -110,6 +157,14 @@ const SYSTEM_ROLES: Record<string, string[]> = {
     Perm.accounts.update,
     Perm.contacts.read,
     Perm.contacts.update,
+    // Sales Manager: configure pipelines and oversee all opportunities.
+    Perm.pipelines.create,
+    Perm.pipelines.read,
+    Perm.pipelines.update,
+    Perm.pipelines.delete,
+    Perm.opportunities.read,
+    Perm.opportunities.update,
+    Perm.opportunities.reassign,
   ],
   USER: [
     Perm.users.read,
@@ -122,6 +177,11 @@ const SYSTEM_ROLES: Record<string, string[]> = {
     Perm.contacts.read,
     Perm.contacts.update,
     Perm.contacts.delete,
+    // Sales Agent: read pipelines, manage their own opportunities.
+    Perm.pipelines.read,
+    Perm.opportunities.create,
+    Perm.opportunities.read,
+    Perm.opportunities.update,
   ],
 };
 

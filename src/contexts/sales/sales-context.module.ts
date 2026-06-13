@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { PipelinesModule } from './pipelines/pipelines.module';
+import { OpportunitiesModule } from './opportunities/opportunities.module';
 
 /**
  * Sales bounded context — selling process.
@@ -10,11 +12,11 @@ import { Module } from '@nestjs/common';
  *   - opportunities (Phase 2)
  *   - dashboard     (Phase 4, query-only aggregation)
  *
- * Integrates with the `crm` context only via domain events on the EventBus
- * or read models — never by importing another context's internals.
+ * Integrates with the `crm` context only via the published CRM_LOOKUP port and
+ * crm domain events on the EventBus — never by importing crm internals.
  */
 @Module({
-  imports: [],
-  exports: [],
+  imports: [PipelinesModule, OpportunitiesModule],
+  exports: [PipelinesModule, OpportunitiesModule],
 })
 export class SalesContextModule {}
