@@ -38,6 +38,48 @@ const PERMISSIONS = [
     module: 'audit-logs',
     description: 'Read audit logs',
   },
+  // --- CRM: accounts (Phase 1) ---
+  {
+    code: Perm.accounts.create,
+    module: 'accounts',
+    description: 'Create accounts',
+  },
+  {
+    code: Perm.accounts.read,
+    module: 'accounts',
+    description: 'Read accounts',
+  },
+  {
+    code: Perm.accounts.update,
+    module: 'accounts',
+    description: 'Update accounts',
+  },
+  {
+    code: Perm.accounts.delete,
+    module: 'accounts',
+    description: 'Archive accounts',
+  },
+  // --- CRM: contacts (Phase 1) ---
+  {
+    code: Perm.contacts.create,
+    module: 'contacts',
+    description: 'Create contacts',
+  },
+  {
+    code: Perm.contacts.read,
+    module: 'contacts',
+    description: 'Read contacts',
+  },
+  {
+    code: Perm.contacts.update,
+    module: 'contacts',
+    description: 'Update contacts',
+  },
+  {
+    code: Perm.contacts.delete,
+    module: 'contacts',
+    description: 'Delete contacts',
+  },
 ];
 
 // Per-tenant system roles. SUPER_ADMIN is intentionally absent: platform
@@ -63,8 +105,24 @@ const SYSTEM_ROLES: Record<string, string[]> = {
     Perm.roles.read,
     Perm.permissions.read,
     Perm.auditLogs.read,
+    // Sales Manager: oversee the team's relationship data tenant-wide.
+    Perm.accounts.read,
+    Perm.accounts.update,
+    Perm.contacts.read,
+    Perm.contacts.update,
   ],
-  USER: [Perm.users.read],
+  USER: [
+    Perm.users.read,
+    // Sales Agent: full CRUD on their own accounts and contacts.
+    Perm.accounts.create,
+    Perm.accounts.read,
+    Perm.accounts.update,
+    Perm.accounts.delete,
+    Perm.contacts.create,
+    Perm.contacts.read,
+    Perm.contacts.update,
+    Perm.contacts.delete,
+  ],
 };
 
 async function main(): Promise<void> {

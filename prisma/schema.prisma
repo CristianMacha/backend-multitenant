@@ -19,6 +19,8 @@ model Tenant {
   users     User[]
   roles     Role[]
   auditLogs AuditLog[]
+  accounts  Account[]
+  contacts  Contact[]
 
   @@map("tenants")
 }
@@ -102,6 +104,60 @@ model RolePermission {
 
   @@unique([roleId, permissionId])
   @@map("role_permissions")
+}
+
+// --- CRM bounded context (crm) ---
+
+enum AccountStatus {
+  ACTIVE
+  ARCHIVED
+
+  @@map("account_status")
+}
+
+model Account {
+  id        String        @id @default(uuid()) @db.Uuid
+  tenantId  String        @map("tenant_id") @db.Uuid
+  name      String
+  industry  String?
+  website   String?
+  phone     String?
+  address   Json?
+  ownerId   String        @map("owner_id") @db.Uuid
+  status    AccountStatus @default(ACTIVE)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  deletedAt DateTime?     @map("deleted_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  contacts Contact[]
+
+  @@index([tenantId])
+  @@index([tenantId, ownerId])
+  @@map("accounts")
+}
+
+model Contact {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  firstName String    @map("first_name")
+  lastName  String    @map("last_name")
+  email     String?
+  phone     String?
+  jobTitle  String?   @map("job_title")
+  accountId String?   @map("account_id") @db.Uuid
+  ownerId   String    @map("owner_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id])
+  account Account? @relation(fields: [accountId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, ownerId])
+  @@index([tenantId, accountId])
+  @@map("contacts")
 }
 
 model DomainEventOutbox {

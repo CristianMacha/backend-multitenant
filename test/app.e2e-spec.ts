@@ -54,4 +54,12 @@ describe('Backend Core (e2e)', () => {
 
     expect(response.headers['x-request-id']).toBe('e2e-correlation-test');
   });
+
+  it('GET /api/v1/accounts without token responds 401', () => {
+    return request(app.getHttpServer()).get('/api/v1/accounts').expect(401);
+  });
+
+  it('GET /api/v1/contacts without token responds 401', () => {
+    return request(app.getHttpServer()).get('/api/v1/contacts').expect(401);
+  });
 });

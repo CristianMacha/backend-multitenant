@@ -23,7 +23,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
