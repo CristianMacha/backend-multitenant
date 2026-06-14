@@ -29,6 +29,7 @@ import { EffectiveTenantId } from '@shared/presentation/decorators/effective-ten
 import { Permissions } from '@contexts/iam/auth/presentation/decorators/permissions.decorator';
 import { CurrentUser } from '@contexts/iam/auth/presentation/decorators/current-user.decorator';
 import { Perm } from '@shared/authorization/permissions';
+import { UserContext } from '@shared/context/request-context';
 import { CreateAccountCommand } from '../../application/create-account/create-account.command';
 import { UpdateAccountCommand } from '../../application/update-account/update-account.command';
 import { ArchiveAccountCommand } from '../../application/archive-account/archive-account.command';
@@ -78,13 +79,21 @@ export class AccountsController {
   async findAll(
     @Query() pagination: PaginationQueryDto,
     @EffectiveTenantId() tenantId: string,
+    @CurrentUser() user: UserContext,
   ) {
+    const isManagerOrAdmin =
+      user.isPlatformAdmin ||
+      user.roles.includes('ADMIN') ||
+      user.roles.includes('MANAGER');
+    const scopedOwnerId = isManagerOrAdmin ? undefined : user.userId;
+
     return this.queryBus.execute(
       new GetAccountsQuery(
         tenantId,
         pagination.page,
         pagination.limit,
         pagination.search,
+        scopedOwnerId,
       ),
     );
   }

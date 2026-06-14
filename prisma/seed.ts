@@ -154,6 +154,17 @@ const PERMISSIONS = [
     module: 'dashboard',
     description: 'View dashboard summary metrics',
   },
+  // --- CRM: settings (Phase 5) ---
+  {
+    code: Perm.crmSettings.read,
+    module: 'crm-settings',
+    description: 'Read CRM settings (default currency, timezone)',
+  },
+  {
+    code: Perm.crmSettings.update,
+    module: 'crm-settings',
+    description: 'Update CRM settings',
+  },
 ];
 
 // Per-tenant system roles. SUPER_ADMIN is intentionally absent: platform
@@ -199,6 +210,8 @@ const SYSTEM_ROLES: Record<string, string[]> = {
     Perm.activities.delete,
     // Sales Manager: dashboard with tenant-wide metrics.
     Perm.dashboard.read,
+    // Sales Manager: read CRM settings.
+    Perm.crmSettings.read,
   ],
   USER: [
     Perm.users.read,
@@ -223,6 +236,8 @@ const SYSTEM_ROLES: Record<string, string[]> = {
     Perm.activities.delete,
     // Sales Agent: dashboard scoped to own data.
     Perm.dashboard.read,
+    // Sales Agent: read CRM settings.
+    Perm.crmSettings.read,
   ],
 };
 

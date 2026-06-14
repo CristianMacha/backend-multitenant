@@ -24,6 +24,7 @@ model Tenant {
   pipelines     Pipeline[]
   opportunities Opportunity[]
   activities    Activity[]
+  crmSettings   CrmSettings?
 
   @@map("tenants")
 }
@@ -309,6 +310,20 @@ model Activity {
   @@index([tenantId, relatedToType, relatedToId])
   @@index([tenantId, status, dueAt])
   @@map("activities")
+}
+
+model CrmSettings {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @unique @map("tenant_id") @db.Uuid
+  defaultCurrency String    @default("USD") @map("default_currency")
+  timezone        String    @default("UTC")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("crm_settings")
 }
 
 model DomainEventOutbox {

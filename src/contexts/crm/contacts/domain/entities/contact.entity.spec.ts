@@ -65,6 +65,36 @@ describe('Contact', () => {
     expect(contact.pullDomainEvents()).toHaveLength(0);
   });
 
+  it('updates firstName and lastName', () => {
+    const contact = makeContact();
+    contact.pullDomainEvents();
+    contact.update({ firstName: 'John', lastName: 'Smith' });
+    expect(contact.firstName).toBe('John');
+    expect(contact.lastName).toBe('Smith');
+    expect(contact.pullDomainEvents()).toHaveLength(1);
+  });
+
+  it('rejects blank firstName', () => {
+    const contact = makeContact();
+    expect(() => contact.update({ firstName: '   ' })).toThrow(DomainException);
+  });
+
+  it('rejects blank lastName', () => {
+    const contact = makeContact();
+    expect(() => contact.update({ lastName: '   ' })).toThrow(DomainException);
+  });
+
+  it('updates and clears phone', () => {
+    const contact = makeContact();
+    contact.pullDomainEvents();
+    contact.update({ phone: '+14155552671' });
+    expect(contact.phone).toBeTruthy();
+    contact.pullDomainEvents();
+    contact.update({ phone: null });
+    expect(contact.phone).toBeUndefined();
+    expect(contact.pullDomainEvents()).toHaveLength(1);
+  });
+
   it('soft-deletes and blocks further changes', () => {
     const contact = makeContact();
     contact.pullDomainEvents();

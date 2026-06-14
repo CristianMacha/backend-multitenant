@@ -28,6 +28,7 @@ import { EffectiveTenantId } from '@shared/presentation/decorators/effective-ten
 import { Permissions } from '@contexts/iam/auth/presentation/decorators/permissions.decorator';
 import { CurrentUser } from '@contexts/iam/auth/presentation/decorators/current-user.decorator';
 import { Perm } from '@shared/authorization/permissions';
+import { UserContext } from '@shared/context/request-context';
 import { CreateOpportunityCommand } from '../../application/create-opportunity/create-opportunity.command';
 import { UpdateOpportunityCommand } from '../../application/update-opportunity/update-opportunity.command';
 import { MoveOpportunityStageCommand } from '../../application/move-opportunity-stage/move-opportunity-stage.command';
@@ -87,7 +88,14 @@ export class OpportunitiesController {
   async findAll(
     @Query() query: OpportunitiesQueryDto,
     @EffectiveTenantId() tenantId: string,
+    @CurrentUser() user: UserContext,
   ) {
+    const isManagerOrAdmin =
+      user.isPlatformAdmin ||
+      user.roles.includes('ADMIN') ||
+      user.roles.includes('MANAGER');
+    const ownerId = isManagerOrAdmin ? query.ownerId : user.userId;
+
     return this.queryBus.execute(
       new GetOpportunitiesQuery(
         tenantId,
@@ -96,7 +104,7 @@ export class OpportunitiesController {
         query.search,
         query.pipelineId,
         query.stageId,
-        query.ownerId,
+        ownerId,
         query.status,
       ),
     );

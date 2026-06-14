@@ -15,6 +15,7 @@ export class GetContactsHandler implements IQueryHandler<GetContactsQuery> {
     const where: Prisma.ContactWhereInput = {
       tenantId: query.tenantId,
       deletedAt: null,
+      ...(query.scopedOwnerId ? { ownerId: query.scopedOwnerId } : {}),
       ...(query.accountId ? { accountId: query.accountId } : {}),
       ...(query.search
         ? {

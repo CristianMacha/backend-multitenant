@@ -4,7 +4,7 @@
 > (NestJS 11 + Prisma/PostgreSQL + Redis/BullMQ + Firebase Auth, DDD bounded contexts + CQRS,
 > multi-tenant, RBAC + granular permissions).
 >
-> Status: **Draft** · Owner: Cristian · Last updated: 2026-06-13
+> Status: **Complete** · Owner: Cristian · Last updated: 2026-06-14
 
 ---
 
