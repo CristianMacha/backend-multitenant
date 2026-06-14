@@ -15,6 +15,7 @@ export class GetAccountsHandler implements IQueryHandler<GetAccountsQuery> {
     const where: Prisma.AccountWhereInput = {
       tenantId: query.tenantId,
       deletedAt: null,
+      ...(query.scopedOwnerId ? { ownerId: query.scopedOwnerId } : {}),
       ...(query.search
         ? {
             OR: [

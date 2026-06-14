@@ -10,6 +10,8 @@ export class GetAccountsQuery extends Query<
     readonly page: number,
     readonly limit: number,
     readonly search?: string,
+    /** undefined = all (admin/manager); string = scoped to this owner (agent) */
+    readonly scopedOwnerId?: string,
   ) {
     super();
   }

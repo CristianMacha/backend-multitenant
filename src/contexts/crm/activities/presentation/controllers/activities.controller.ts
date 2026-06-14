@@ -28,6 +28,7 @@ import {
 } from '@shared/presentation/swagger/api-standard-response.decorator';
 import { EffectiveTenantId } from '@shared/presentation/decorators/effective-tenant-id.decorator';
 import { CurrentUser } from '@contexts/iam/auth/presentation/decorators/current-user.decorator';
+import { UserContext } from '@shared/context/request-context';
 import { Permissions } from '@contexts/iam/auth/presentation/decorators/permissions.decorator';
 import { Perm } from '@shared/authorization/permissions';
 import { CreateActivityCommand } from '../../application/create-activity/create-activity.command';
@@ -86,7 +87,14 @@ export class ActivitiesController {
   async findAll(
     @Query() query: ActivitiesQueryDto,
     @EffectiveTenantId() tenantId: string,
+    @CurrentUser() user: UserContext,
   ): Promise<PaginatedResultDto<ActivityReadModel>> {
+    const isManagerOrAdmin =
+      user.isPlatformAdmin ||
+      user.roles.includes('ADMIN') ||
+      user.roles.includes('MANAGER');
+    const ownerId = isManagerOrAdmin ? query.ownerId : user.userId;
+
     return this.queryBus.execute(
       new GetActivitiesQuery(
         tenantId,
@@ -94,7 +102,7 @@ export class ActivitiesController {
         query.limit,
         query.relatedToType,
         query.relatedToId,
-        query.ownerId,
+        ownerId,
         query.status,
         query.dueDateFrom,
         query.dueDateTo,

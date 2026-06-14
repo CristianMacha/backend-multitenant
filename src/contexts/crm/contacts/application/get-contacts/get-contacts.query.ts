@@ -11,6 +11,8 @@ export class GetContactsQuery extends Query<
     readonly limit: number,
     readonly search?: string,
     readonly accountId?: string,
+    /** undefined = all (admin/manager); string = scoped to this owner (agent) */
+    readonly scopedOwnerId?: string,
   ) {
     super();
   }

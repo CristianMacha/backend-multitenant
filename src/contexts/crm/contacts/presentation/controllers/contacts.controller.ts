@@ -28,6 +28,7 @@ import { EffectiveTenantId } from '@shared/presentation/decorators/effective-ten
 import { Permissions } from '@contexts/iam/auth/presentation/decorators/permissions.decorator';
 import { CurrentUser } from '@contexts/iam/auth/presentation/decorators/current-user.decorator';
 import { Perm } from '@shared/authorization/permissions';
+import { UserContext } from '@shared/context/request-context';
 import { CreateContactCommand } from '../../application/create-contact/create-contact.command';
 import { UpdateContactCommand } from '../../application/update-contact/update-contact.command';
 import { LinkContactToAccountCommand } from '../../application/link-contact-to-account/link-contact-to-account.command';
@@ -79,7 +80,14 @@ export class ContactsController {
   async findAll(
     @Query() query: ContactsQueryDto,
     @EffectiveTenantId() tenantId: string,
+    @CurrentUser() user: UserContext,
   ) {
+    const isManagerOrAdmin =
+      user.isPlatformAdmin ||
+      user.roles.includes('ADMIN') ||
+      user.roles.includes('MANAGER');
+    const scopedOwnerId = isManagerOrAdmin ? undefined : user.userId;
+
     return this.queryBus.execute(
       new GetContactsQuery(
         tenantId,
@@ -87,6 +95,7 @@ export class ContactsController {
         query.limit,
         query.search,
         query.accountId,
+        scopedOwnerId,
       ),
     );
   }
