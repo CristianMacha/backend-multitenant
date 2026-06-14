@@ -1,0 +1,35 @@
+{
+  "project": "backend-bear",
+  "description": "Enterprise backend core — NestJS 11 + TypeScript + Prisma/PostgreSQL + Redis/BullMQ + Firebase Auth. Multi-tenant, RBAC, CQRS, event-driven.",
+  "rules": {
+    "one_feature_at_a_time": true,
+    "require_tests_to_close": true,
+    "require_approved_spec_to_implement": true,
+    "valid_status": ["pending", "spec_ready", "in_progress", "done", "blocked"],
+    "sdd_required_when": "feature has \"sdd\": true"
+  },
+  "features": [
+    {
+      "id": 1,
+      "name": "notifications",
+      "title": "Platform — Notifications module",
+      "context": "platform",
+      "description": "In-app notification system that consumes ReminderDue signals from the activities module (crm/activities) and any future domain events that need user-facing delivery. Resolves the open question in §6 of the CRM plan around activity reminder delivery channel.",
+      "acceptance": [
+        "Notification model: id, tenantId, userId, type, title, body, read, readAt, createdAt (soft-delete)",
+        "NotificationService injectable by other contexts to create notifications without coupling",
+        "Event handler that listens to ReminderDue (from crm/activities BullMQ job) and creates an in-app notification for the activity owner",
+        "GET /api/v1/notifications — paginated list for the authenticated user (own tenant, deletedAt: null)",
+        "PATCH /api/v1/notifications/:id/read — mark single notification as read",
+        "PATCH /api/v1/notifications/read-all — mark all as read",
+        "GET /api/v1/notifications/unread-count — returns unread count integer",
+        "Only the notification owner can read or mark their own notifications",
+        "Domain events emitted (NotificationCreated) and written to outbox",
+        "Endpoints protected with permissions notifications.read / notifications.update",
+        "Unit tests for all command and query handlers; coverage >= 80%"
+      ],
+      "sdd": true,
+      "status": "pending"
+    }
+  ]
+}
