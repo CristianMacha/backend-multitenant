@@ -26,6 +26,7 @@ model Tenant {
   activities    Activity[]
   crmSettings   CrmSettings?
   notifications Notification[]
+  products      Product[]
 
   @@map("tenants")
 }
@@ -358,6 +359,46 @@ model Notification {
   @@index([tenantId, userId, read])
   @@index([tenantId, userId, createdAt])
   @@map("notifications")
+}
+
+// --- Catalog bounded context ---
+
+enum ProductType {
+  PRODUCT
+  SERVICE
+
+  @@map("product_type")
+}
+
+enum ProductStatus {
+  ACTIVE
+  ARCHIVED
+
+  @@map("product_status")
+}
+
+model Product {
+  id            String        @id @default(uuid()) @db.Uuid
+  tenantId      String        @map("tenant_id") @db.Uuid
+  name          String
+  description   String?
+  type          ProductType
+  category      String?
+  unitPrice     Decimal       @default(0) @map("unit_price") @db.Decimal(14, 2)
+  currency      String        @db.VarChar(3)
+  unitOfMeasure String        @map("unit_of_measure")
+  status        ProductStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  deletedAt     DateTime?     @map("deleted_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, type])
+  @@index([tenantId, status])
+  @@index([tenantId, category])
+  @@map("products")
 }
 
 model DomainEventOutbox {

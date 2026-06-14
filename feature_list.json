@@ -30,6 +30,28 @@
       ],
       "sdd": true,
       "status": "done"
+    },
+    {
+      "id": 2,
+      "name": "products_catalog",
+      "title": "Catalog — Products & Services catalog module",
+      "context": "catalog",
+      "description": "New bounded context 'catalog/' for managing a multi-tenant product and service catalog. Covers full CRUD (create, edit, archive, list) of products/services with basic categorization (type: product/service, category), unit price, and unit of measure. The context exposes a ProductId branded type and a ProductQueryService so that the sales/ context can reference products by ID without importing catalog internals. No inventory or advanced pricing in this phase.",
+      "acceptance": [
+        "Product model: id, tenantId, name, description, type (PRODUCT|SERVICE), category, unitPrice (Money VO), unitOfMeasure, status (ACTIVE|ARCHIVED), createdAt, updatedAt, deletedAt",
+        "POST /api/v1/products — create a product/service (products.create permission)",
+        "GET /api/v1/products — paginated list filtered by tenantId and deletedAt:null; supports filter by type/category/status (products.read permission)",
+        "GET /api/v1/products/:id — get product by id (products.read permission)",
+        "PATCH /api/v1/products/:id — update product fields (products.update permission)",
+        "DELETE /api/v1/products/:id — archive product (sets status=ARCHIVED, soft-delete, products.delete permission)",
+        "ProductId branded type exported from catalog-context.module.ts for use by other contexts",
+        "ProductQueryService exported from catalog-context.module.ts; provides findById(tenantId, productId) returning a lightweight read model (no domain internals leaked)",
+        "Domain events: ProductCreated, ProductUpdated, ProductArchived — emitted and written to outbox",
+        "Multi-tenant isolation: all queries filter by tenantId and deletedAt:null",
+        "Unit tests for all command and query handlers; coverage >= 80%"
+      ],
+      "sdd": true,
+      "status": "done"
     }
   ]
 }

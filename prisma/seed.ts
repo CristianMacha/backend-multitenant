@@ -176,6 +176,27 @@ const PERMISSIONS = [
     module: 'notifications',
     description: 'Mark own notifications as read',
   },
+  // --- Catalog: products ---
+  {
+    code: Perm.products.create,
+    module: 'products',
+    description: 'Create products and services',
+  },
+  {
+    code: Perm.products.read,
+    module: 'products',
+    description: 'Read products and services',
+  },
+  {
+    code: Perm.products.update,
+    module: 'products',
+    description: 'Update products and services',
+  },
+  {
+    code: Perm.products.delete,
+    module: 'products',
+    description: 'Archive products and services',
+  },
 ];
 
 // Per-tenant system roles. SUPER_ADMIN is intentionally absent: platform
@@ -226,6 +247,9 @@ const SYSTEM_ROLES: Record<string, string[]> = {
     // Notifications: all users can read and mark their own notifications.
     Perm.notifications.read,
     Perm.notifications.update,
+    // Catalog: managers can read and update the product catalog.
+    Perm.products.read,
+    Perm.products.update,
   ],
   USER: [
     Perm.users.read,
@@ -255,6 +279,8 @@ const SYSTEM_ROLES: Record<string, string[]> = {
     // Notifications: all users can read and mark their own notifications.
     Perm.notifications.read,
     Perm.notifications.update,
+    // Catalog: sales agents can read the product catalog.
+    Perm.products.read,
   ],
 };
 
