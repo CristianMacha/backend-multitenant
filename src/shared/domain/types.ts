@@ -49,3 +49,9 @@ export const ActivityId = (v: string): ActivityId => v as ActivityId;
 /** Cast a raw string to NotificationId. */
 export const NotificationId = (v: string): NotificationId =>
   v as NotificationId;
+
+// --- Catalog bounded context ---
+/** Compile-time alias for a catalog product uuid. */
+export type ProductId = Brand<string, 'ProductId'>;
+/** Cast a raw string to ProductId. */
+export const ProductId = (v: string): ProductId => v as ProductId;

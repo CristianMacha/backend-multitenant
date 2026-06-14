@@ -67,6 +67,13 @@ export const Perm = {
     read: 'notifications.read',
     update: 'notifications.update',
   },
+  // --- Catalog: products ---
+  products: {
+    create: 'products.create',
+    read: 'products.read',
+    update: 'products.update',
+    delete: 'products.delete',
+  },
 } as const;
 
 export type PermissionCode =
