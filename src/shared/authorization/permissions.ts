@@ -59,6 +59,10 @@ export const Perm = {
   dashboard: {
     read: 'dashboard.read',
   },
+  crmSettings: {
+    read: 'crm-settings.read',
+    update: 'crm-settings.update',
+  },
 } as const;
 
 export type PermissionCode =
