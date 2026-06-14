@@ -26,6 +26,7 @@ import { ReportWorker } from './infrastructure/workers/report.worker';
       { name: QUEUES.NOTIFICATIONS },
       { name: QUEUES.REPORTS },
       { name: QUEUES.INTEGRATIONS },
+      { name: QUEUES.ACTIVITY_REMINDERS },
     ),
   ],
   providers: [JobsService, EmailWorker, NotificationWorker, ReportWorker],

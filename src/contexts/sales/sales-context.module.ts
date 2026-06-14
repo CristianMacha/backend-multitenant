@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PipelinesModule } from './pipelines/pipelines.module';
 import { OpportunitiesModule } from './opportunities/opportunities.module';
+import { SalesLookupModule } from './lookup/sales-lookup.module';
 
 /**
  * Sales bounded context — selling process.
@@ -16,7 +17,7 @@ import { OpportunitiesModule } from './opportunities/opportunities.module';
  * crm domain events on the EventBus — never by importing crm internals.
  */
 @Module({
-  imports: [PipelinesModule, OpportunitiesModule],
-  exports: [PipelinesModule, OpportunitiesModule],
+  imports: [PipelinesModule, OpportunitiesModule, SalesLookupModule],
+  exports: [PipelinesModule, OpportunitiesModule, SalesLookupModule],
 })
 export class SalesContextModule {}
