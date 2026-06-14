@@ -122,4 +122,89 @@ describe('CreateOpportunityHandler', () => {
     );
     expect(save).not.toHaveBeenCalled();
   });
+
+  it('creates opportunity in a specific stage when stageId is provided', async () => {
+    const pipeline = makePipeline();
+    const wonStage = pipeline.stages.find((s) => s.type === 'WON')!;
+    const { opportunityRepo, pipelineRepo, crm, save, publishAll, eventBus } =
+      makeMocks({ pipeline });
+    const handler = new CreateOpportunityHandler(
+      opportunityRepo,
+      pipelineRepo,
+      crm,
+      eventBus,
+    );
+    const result = await handler.execute(
+      new CreateOpportunityCommand(
+        'tenant-1',
+        'owner-1',
+        'Won Deal',
+        'acct-1',
+        'pipe-1',
+        9000,
+        'USD',
+        wonStage.id,
+      ),
+    );
+    expect(result.id).toBeDefined();
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(publishAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('creates opportunity with contactId when provided and valid', async () => {
+    const { opportunityRepo, pipelineRepo, crm, save, eventBus } = makeMocks({
+      pipeline: makePipeline(),
+      contactExists: true,
+    });
+    const handler = new CreateOpportunityHandler(
+      opportunityRepo,
+      pipelineRepo,
+      crm,
+      eventBus,
+    );
+    const result = await handler.execute(
+      new CreateOpportunityCommand(
+        'tenant-1',
+        'owner-1',
+        'Deal with Contact',
+        'acct-1',
+        'pipe-1',
+        5000,
+        'USD',
+        undefined,
+        'contact-1',
+      ),
+    );
+    expect(result.id).toBeDefined();
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws when contactId is provided but contact does not exist', async () => {
+    const { opportunityRepo, pipelineRepo, crm, save, eventBus } = makeMocks({
+      pipeline: makePipeline(),
+      contactExists: false,
+    });
+    const handler = new CreateOpportunityHandler(
+      opportunityRepo,
+      pipelineRepo,
+      crm,
+      eventBus,
+    );
+    await expect(
+      handler.execute(
+        new CreateOpportunityCommand(
+          'tenant-1',
+          'owner-1',
+          'Deal',
+          'acct-1',
+          'pipe-1',
+          5000,
+          'USD',
+          undefined,
+          'bad-contact',
+        ),
+      ),
+    ).rejects.toBeInstanceOf(EntityNotFoundException);
+    expect(save).not.toHaveBeenCalled();
+  });
 });

@@ -59,6 +59,38 @@ describe('Account', () => {
     );
   });
 
+  it('updates name and website', () => {
+    const account = makeAccount();
+    account.pullDomainEvents();
+    account.update({ name: 'New Corp', website: 'https://newcorp.com' });
+    expect(account.name).toBe('New Corp');
+    expect(account.website).toBe('https://newcorp.com');
+    expect(account.pullDomainEvents()).toHaveLength(1);
+  });
+
+  it('rejects a blank name update', () => {
+    const account = makeAccount();
+    expect(() => account.update({ name: '   ' })).toThrow(DomainException);
+  });
+
+  it('sets and clears address', () => {
+    const account = makeAccount();
+    account.pullDomainEvents();
+    account.update({ address: { city: 'San Francisco', country: 'US' } });
+    expect(account.address?.city).toBe('San Francisco');
+    account.pullDomainEvents();
+    account.update({ address: null });
+    expect(account.address).toBeUndefined();
+    expect(account.pullDomainEvents()).toHaveLength(1);
+  });
+
+  it('changeOwner is a no-op when the owner is already the same', () => {
+    const account = makeAccount();
+    account.pullDomainEvents();
+    account.changeOwner(UserId('owner-1'));
+    expect(account.pullDomainEvents()).toHaveLength(0);
+  });
+
   it('archives the account, soft-deletes it and blocks further changes', () => {
     const account = makeAccount();
     account.pullDomainEvents();

@@ -89,4 +89,53 @@ describe('Pipeline', () => {
     const ids = pipeline.stages.map((s) => s.id);
     expect(() => pipeline.reorderStages([ids[0]])).toThrow(DomainException);
   });
+
+  describe('update()', () => {
+    it('updates name and emits event', () => {
+      const pipeline = makePipeline();
+      pipeline.pullDomainEvents();
+      pipeline.update({ name: 'Renamed Pipeline' });
+      const events = pipeline.pullDomainEvents();
+      expect(events).toHaveLength(1);
+    });
+
+    it('rejects empty pipeline name', () => {
+      const pipeline = makePipeline();
+      expect(() => pipeline.update({ name: '   ' })).toThrow(DomainException);
+    });
+
+    it('updates isDefault and emits event', () => {
+      const pipeline = makePipeline();
+      pipeline.pullDomainEvents();
+      pipeline.update({ isDefault: false });
+      expect(pipeline.pullDomainEvents()).toHaveLength(1);
+    });
+
+    it('is a no-op when no changes are provided', () => {
+      const pipeline = makePipeline();
+      pipeline.pullDomainEvents();
+      pipeline.update({});
+      expect(pipeline.pullDomainEvents()).toHaveLength(0);
+    });
+  });
+
+  describe('delete()', () => {
+    it('soft-deletes the pipeline and blocks further changes', () => {
+      const pipeline = makePipeline();
+      pipeline.pullDomainEvents();
+      pipeline.delete();
+      expect(pipeline.isDeleted).toBe(true);
+      expect(pipeline.pullDomainEvents()).toHaveLength(1);
+      expect(() => pipeline.update({ name: 'X' })).toThrow(DomainException);
+      expect(() =>
+        pipeline.addStage({
+          name: 'S',
+          order: 0,
+          probability: 50,
+          type: 'OPEN',
+        }),
+      ).toThrow(DomainException);
+      expect(() => pipeline.delete()).toThrow(DomainException);
+    });
+  });
 });

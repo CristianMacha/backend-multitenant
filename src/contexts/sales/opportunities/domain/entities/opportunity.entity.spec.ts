@@ -127,4 +127,59 @@ describe('Opportunity', () => {
       }),
     ).toThrow(DomainException);
   });
+
+  it('update() with name, contactId, expectedCloseDate', () => {
+    const opp = makeOpportunity();
+    opp.pullDomainEvents();
+    opp.update({
+      name: 'Renamed',
+      contactId: ContactId('contact-1'),
+      expectedCloseDate: new Date('2025-12-31'),
+    });
+    expect(opp.contactId).toBe('contact-1');
+    const events = opp.pullDomainEvents();
+    expect(events).toHaveLength(1);
+  });
+
+  it('update() is no-op when nothing changes', () => {
+    const opp = makeOpportunity();
+    opp.pullDomainEvents();
+    opp.update({});
+    expect(opp.pullDomainEvents()).toHaveLength(0);
+  });
+
+  it('update() rejects empty name', () => {
+    const opp = makeOpportunity();
+    opp.pullDomainEvents();
+    expect(() => opp.update({ name: '' })).toThrow(DomainException);
+  });
+
+  it('reassign() is no-op when owner is the same', () => {
+    const opp = makeOpportunity();
+    opp.pullDomainEvents();
+    opp.reassign(UserId('owner-1'));
+    expect(opp.pullDomainEvents()).toHaveLength(0);
+  });
+
+  it('moveToStage() is no-op when stage does not change', () => {
+    const opp = makeOpportunity();
+    opp.pullDomainEvents();
+    opp.moveToStage(StageId('stage-open'), 'OPEN');
+    expect(opp.pullDomainEvents()).toHaveLength(0);
+  });
+
+  it('clearContact() is no-op when there is no contact', () => {
+    const opp = makeOpportunity();
+    opp.pullDomainEvents();
+    opp.clearContact();
+    expect(opp.pullDomainEvents()).toHaveLength(0);
+  });
+
+  it('delete() soft-deletes and blocks further mutations', () => {
+    const opp = makeOpportunity();
+    opp.pullDomainEvents();
+    opp.delete();
+    expect(opp.isDeleted).toBe(true);
+    expect(() => opp.update({ name: 'x' })).toThrow(DomainException);
+  });
 });
