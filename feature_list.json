@@ -29,7 +29,7 @@
         "Unit tests for all command and query handlers; coverage >= 80%"
       ],
       "sdd": true,
-      "status": "pending"
+      "status": "done"
     }
   ]
 }
