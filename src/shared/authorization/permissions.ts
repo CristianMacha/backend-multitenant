@@ -63,6 +63,10 @@ export const Perm = {
     read: 'crm-settings.read',
     update: 'crm-settings.update',
   },
+  notifications: {
+    read: 'notifications.read',
+    update: 'notifications.update',
+  },
 } as const;
 
 export type PermissionCode =

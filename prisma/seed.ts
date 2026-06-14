@@ -165,6 +165,17 @@ const PERMISSIONS = [
     module: 'crm-settings',
     description: 'Update CRM settings',
   },
+  // --- Platform: notifications ---
+  {
+    code: Perm.notifications.read,
+    module: 'notifications',
+    description: 'Read own notifications',
+  },
+  {
+    code: Perm.notifications.update,
+    module: 'notifications',
+    description: 'Mark own notifications as read',
+  },
 ];
 
 // Per-tenant system roles. SUPER_ADMIN is intentionally absent: platform
@@ -212,6 +223,9 @@ const SYSTEM_ROLES: Record<string, string[]> = {
     Perm.dashboard.read,
     // Sales Manager: read CRM settings.
     Perm.crmSettings.read,
+    // Notifications: all users can read and mark their own notifications.
+    Perm.notifications.read,
+    Perm.notifications.update,
   ],
   USER: [
     Perm.users.read,
@@ -238,6 +252,9 @@ const SYSTEM_ROLES: Record<string, string[]> = {
     Perm.dashboard.read,
     // Sales Agent: read CRM settings.
     Perm.crmSettings.read,
+    // Notifications: all users can read and mark their own notifications.
+    Perm.notifications.read,
+    Perm.notifications.update,
   ],
 };
 
