@@ -127,6 +127,27 @@ const PERMISSIONS = [
     module: 'opportunities',
     description: 'Reassign opportunities',
   },
+  // --- CRM: activities (Phase 3) ---
+  {
+    code: Perm.activities.create,
+    module: 'activities',
+    description: 'Create activities',
+  },
+  {
+    code: Perm.activities.read,
+    module: 'activities',
+    description: 'Read activities',
+  },
+  {
+    code: Perm.activities.update,
+    module: 'activities',
+    description: 'Update activities (complete / reschedule)',
+  },
+  {
+    code: Perm.activities.delete,
+    module: 'activities',
+    description: 'Delete activities',
+  },
 ];
 
 // Per-tenant system roles. SUPER_ADMIN is intentionally absent: platform
@@ -165,6 +186,11 @@ const SYSTEM_ROLES: Record<string, string[]> = {
     Perm.opportunities.read,
     Perm.opportunities.update,
     Perm.opportunities.reassign,
+    // Sales Manager: read all activities tenant-wide.
+    Perm.activities.create,
+    Perm.activities.read,
+    Perm.activities.update,
+    Perm.activities.delete,
   ],
   USER: [
     Perm.users.read,
@@ -182,6 +208,11 @@ const SYSTEM_ROLES: Record<string, string[]> = {
     Perm.opportunities.create,
     Perm.opportunities.read,
     Perm.opportunities.update,
+    // Sales Agent: full CRUD on their own activities.
+    Perm.activities.create,
+    Perm.activities.read,
+    Perm.activities.update,
+    Perm.activities.delete,
   ],
 };
 

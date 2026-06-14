@@ -23,6 +23,7 @@ model Tenant {
   contacts      Contact[]
   pipelines     Pipeline[]
   opportunities Opportunity[]
+  activities    Activity[]
 
   @@map("tenants")
 }
@@ -247,6 +248,67 @@ model Opportunity {
   @@index([tenantId, status])
   @@index([tenantId, contactId])
   @@map("opportunities")
+}
+
+// --- CRM activities (crm context, Phase 3) ---
+
+enum ActivityType {
+  CALL
+  MEETING
+  EMAIL
+  TASK
+  NOTE
+  SYSTEM
+
+  @@map("activity_type")
+}
+
+enum ActivityStatus {
+  OPEN
+  DONE
+
+  @@map("activity_status")
+}
+
+enum ActivitySource {
+  USER
+  SYSTEM
+
+  @@map("activity_source")
+}
+
+enum RelatedToType {
+  ACCOUNT
+  CONTACT
+  OPPORTUNITY
+
+  @@map("related_to_type")
+}
+
+model Activity {
+  id            String         @id @default(uuid()) @db.Uuid
+  tenantId      String         @map("tenant_id") @db.Uuid
+  type          ActivityType
+  subject       String
+  body          String?
+  dueAt         DateTime?      @map("due_at")
+  completedAt   DateTime?      @map("completed_at")
+  status        ActivityStatus @default(OPEN)
+  ownerId       String?        @map("owner_id") @db.Uuid
+  source        ActivitySource @default(USER)
+  relatedToType RelatedToType  @map("related_to_type")
+  relatedToId   String         @map("related_to_id") @db.Uuid
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  deletedAt     DateTime?      @map("deleted_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, ownerId])
+  @@index([tenantId, relatedToType, relatedToId])
+  @@index([tenantId, status, dueAt])
+  @@map("activities")
 }
 
 model DomainEventOutbox {
