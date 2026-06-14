@@ -23,6 +23,8 @@ export type PipelineId = Brand<string, 'PipelineId'>;
 export type StageId = Brand<string, 'StageId'>;
 /** Compile-time alias for a CRM activity (task/call/meeting) uuid. */
 export type ActivityId = Brand<string, 'ActivityId'>;
+/** Compile-time alias for a platform notification uuid. */
+export type NotificationId = Brand<string, 'NotificationId'>;
 
 /** Cast a raw string to TenantId. Use only at system entry points (handlers, mappers). */
 export const TenantId = (v: string): TenantId => v as TenantId;
@@ -44,3 +46,6 @@ export const PipelineId = (v: string): PipelineId => v as PipelineId;
 export const StageId = (v: string): StageId => v as StageId;
 /** Cast a raw string to ActivityId. */
 export const ActivityId = (v: string): ActivityId => v as ActivityId;
+/** Cast a raw string to NotificationId. */
+export const NotificationId = (v: string): NotificationId =>
+  v as NotificationId;

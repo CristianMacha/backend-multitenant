@@ -25,6 +25,7 @@ model Tenant {
   opportunities Opportunity[]
   activities    Activity[]
   crmSettings   CrmSettings?
+  notifications Notification[]
 
   @@map("tenants")
 }
@@ -42,9 +43,10 @@ model User {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
-  tenant    Tenant     @relation(fields: [tenantId], references: [id])
-  userRoles UserRole[]
-  auditLogs AuditLog[]
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  userRoles     UserRole[]
+  auditLogs     AuditLog[]
+  notifications Notification[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -324,6 +326,38 @@ model CrmSettings {
   tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@map("crm_settings")
+}
+
+// --- Platform notifications ---
+
+enum NotificationType {
+  ACTIVITY_REMINDER
+  SYSTEM
+  GENERIC
+
+  @@map("notification_type")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  tenantId  String           @map("tenant_id") @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType @default(GENERIC)
+  title     String
+  body      String
+  read      Boolean          @default(false)
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  deletedAt DateTime?        @map("deleted_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, userId, read])
+  @@index([tenantId, userId, createdAt])
+  @@map("notifications")
 }
 
 model DomainEventOutbox {

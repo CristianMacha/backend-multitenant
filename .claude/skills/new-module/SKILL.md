@@ -97,4 +97,4 @@ Never skip the `pullDomainEvents()` + `save(aggregate, events)` pattern — the 
 
 ### 8. Verify
 
-Run `pnpm build && pnpm lint && pnpm test`. All three must pass before reporting done. Finish by summarizing the created endpoints and the permission codes that were registered.
+Run `pnpm build && pnpm format && pnpm lint && pnpm test`. All three must pass before reporting done. Finish by summarizing the created endpoints and the permission codes that were registered.
