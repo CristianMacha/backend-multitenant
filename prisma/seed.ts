@@ -148,6 +148,12 @@ const PERMISSIONS = [
     module: 'activities',
     description: 'Delete activities',
   },
+  // --- Sales: dashboard (Phase 4) ---
+  {
+    code: Perm.dashboard.read,
+    module: 'dashboard',
+    description: 'View dashboard summary metrics',
+  },
 ];
 
 // Per-tenant system roles. SUPER_ADMIN is intentionally absent: platform
@@ -191,6 +197,8 @@ const SYSTEM_ROLES: Record<string, string[]> = {
     Perm.activities.read,
     Perm.activities.update,
     Perm.activities.delete,
+    // Sales Manager: dashboard with tenant-wide metrics.
+    Perm.dashboard.read,
   ],
   USER: [
     Perm.users.read,
@@ -213,6 +221,8 @@ const SYSTEM_ROLES: Record<string, string[]> = {
     Perm.activities.read,
     Perm.activities.update,
     Perm.activities.delete,
+    // Sales Agent: dashboard scoped to own data.
+    Perm.dashboard.read,
   ],
 };
 
