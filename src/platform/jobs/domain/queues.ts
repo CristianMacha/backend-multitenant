@@ -3,6 +3,7 @@ export const QUEUES = {
   NOTIFICATIONS: 'notifications',
   REPORTS: 'reports',
   INTEGRATIONS: 'integrations',
+  ACTIVITY_REMINDERS: 'activity-reminders',
 } as const;
 
 export const JOB_NAMES = {
@@ -10,6 +11,7 @@ export const JOB_NAMES = {
   SEND_NOTIFICATION: 'send-notification',
   GENERATE_REPORT: 'generate-report',
   SYNC_INTEGRATION: 'sync-integration',
+  ACTIVITY_REMINDER_DUE: 'activity-reminder-due',
 } as const;
 
 export interface SendEmailJobData {
@@ -38,4 +40,10 @@ export interface SyncIntegrationJobData {
   integration: string;
   payload: Record<string, unknown>;
   tenantId?: string;
+}
+
+export interface ActivityReminderJobData {
+  activityId: string;
+  tenantId: string;
+  dueAt: string;
 }

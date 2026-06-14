@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import {
+  ActivityReminderJobData,
   GenerateReportJobData,
   JOB_NAMES,
   QUEUES,
@@ -26,6 +27,8 @@ export class JobsService {
     private readonly notificationsQueue: Queue,
     @InjectQueue(QUEUES.REPORTS) private readonly reportsQueue: Queue,
     @InjectQueue(QUEUES.INTEGRATIONS) private readonly integrationsQueue: Queue,
+    @InjectQueue(QUEUES.ACTIVITY_REMINDERS)
+    private readonly activityRemindersQueue: Queue,
   ) {}
 
   async enqueueEmail(data: SendEmailJobData): Promise<void> {
@@ -53,6 +56,17 @@ export class JobsService {
       JOB_NAMES.SYNC_INTEGRATION,
       data,
       DEFAULT_JOB_OPTIONS,
+    );
+  }
+
+  async enqueueActivityReminder(
+    data: ActivityReminderJobData,
+    delayMs: number,
+  ): Promise<void> {
+    await this.activityRemindersQueue.add(
+      JOB_NAMES.ACTIVITY_REMINDER_DUE,
+      data,
+      { ...DEFAULT_JOB_OPTIONS, delay: delayMs },
     );
   }
 }
