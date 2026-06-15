@@ -12,8 +12,8 @@ export class PrismaCrmSettingsRepository implements CrmSettingsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findByTenantId(tenantId: TenantId): Promise<CrmSettings | null> {
-    const row = await this.prisma.crmSettings.findUnique({
-      where: { tenantId },
+    const row = await this.prisma.crmSettings.findFirst({
+      where: { tenantId, deletedAt: null },
     });
     return row ? CrmSettingsMapper.toDomain(row) : null;
   }

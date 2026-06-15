@@ -7,7 +7,7 @@ const makePrisma = (
   row: { defaultCurrency: string; timezone: string } | null,
 ) =>
   ({
-    crmSettings: { findUnique: jest.fn().mockResolvedValue(row) },
+    crmSettings: { findFirst: jest.fn().mockResolvedValue(row) },
   }) as unknown as PrismaService;
 
 describe('GetCrmSettingsHandler', () => {
