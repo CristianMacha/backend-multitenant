@@ -117,7 +117,7 @@ Cuando el humano lo indique, lanza `implementer` de nuevo para corregir.
 | Complejidad               | Subagentes                                                                   |
 | ------------------------- | ---------------------------------------------------------------------------- |
 | Simple (1-2 archivos)     | 1 spec_author → ⏸ → 1 implementer                                            |
-| Media (módulo completo)   | 1 spec_author → ⏸ → 1 implementer → 1 reviewer                               |
+| Media (módulo completo)   | 1 spec_author → ⏸ → 1 implementer → 1 reviewer → arch-guardian               |
 | Compleja (nuevo contexto) | 2-3 Explore → 1 spec_author → ⏸ → 1 implementer → 1 reviewer → arch-guardian |
 
 ## Regla anti-teléfono-descompuesto

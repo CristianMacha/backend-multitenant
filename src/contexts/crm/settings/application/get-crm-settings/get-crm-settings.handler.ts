@@ -11,8 +11,8 @@ export class GetCrmSettingsHandler implements IQueryHandler<GetCrmSettingsQuery>
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetCrmSettingsQuery): Promise<CrmSettingsReadModel> {
-    const row = await this.prisma.crmSettings.findUnique({
-      where: { tenantId: query.tenantId },
+    const row = await this.prisma.crmSettings.findFirst({
+      where: { tenantId: query.tenantId, deletedAt: null },
     });
 
     if (!row) return { ...DEFAULT_CRM_SETTINGS };

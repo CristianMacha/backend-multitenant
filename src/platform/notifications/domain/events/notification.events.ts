@@ -13,3 +13,15 @@ export class NotificationCreatedEvent extends DomainEvent {
     super(aggregateId, tenantId);
   }
 }
+
+export class NotificationDeletedEvent extends DomainEvent {
+  readonly eventName = 'notification.deleted';
+
+  constructor(
+    aggregateId: string,
+    tenantId: string,
+    readonly userId: string,
+  ) {
+    super(aggregateId, tenantId);
+  }
+}

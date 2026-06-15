@@ -2,7 +2,10 @@ import { AggregateRoot } from '@shared/domain/aggregate-root.base';
 import { BaseEntityProps } from '@shared/domain/entity.base';
 import { TenantId, UserId } from '@shared/domain/types';
 import { DomainException } from '@shared/exceptions';
-import { NotificationCreatedEvent } from '../events/notification.events';
+import {
+  NotificationCreatedEvent,
+  NotificationDeletedEvent,
+} from '../events/notification.events';
 
 export type NotificationType = 'ACTIVITY_REMINDER' | 'SYSTEM' | 'GENERIC';
 
@@ -116,5 +119,8 @@ export class Notification extends AggregateRoot<NotificationProps> {
 
   delete(): void {
     this.softDelete();
+    this.addDomainEvent(
+      new NotificationDeletedEvent(this.id, this.tenantId, this.userId),
+    );
   }
 }

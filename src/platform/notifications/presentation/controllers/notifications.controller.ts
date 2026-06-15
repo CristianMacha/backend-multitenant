@@ -21,8 +21,8 @@ import {
   ApiStandardResponse,
 } from '@shared/presentation/swagger/api-standard-response.decorator';
 import { EffectiveTenantId } from '@shared/presentation/decorators/effective-tenant-id.decorator';
-import { CurrentUser } from '@contexts/iam/auth/presentation/decorators/current-user.decorator';
-import { Permissions } from '@contexts/iam/auth/presentation/decorators/permissions.decorator';
+import { CurrentUser } from '@shared/presentation/decorators/current-user.decorator';
+import { Permissions } from '@shared/presentation/decorators/permissions.decorator';
 import { Perm } from '@shared/authorization/permissions';
 import { NotificationReadModel } from '../../application/notification.read-model';
 import { GetNotificationsQuery } from '../../application/get-notifications/get-notifications.query';
