@@ -13,6 +13,8 @@ import { NavigationItemResponseDto } from '../dto/navigation-item-response.dto';
 export class NavigationController {
   constructor(private readonly queryBus: QueryBus) {}
 
+  // No @Permissions/@Roles by design: any authenticated user may fetch their own navigation.
+  // The response is already scoped to the caller's permissions inside GetNavigationQuery.
   @Get()
   @ApiOperation({
     summary: 'Get sidebar menu filtered by the current user permissions',
