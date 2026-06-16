@@ -52,6 +52,27 @@
       ],
       "sdd": true,
       "status": "done"
+    },
+    {
+      "id": 3,
+      "name": "current_user_identity",
+      "title": "IAM — GET /me authenticated user identity endpoint",
+      "context": "iam",
+      "issue": 26,
+      "branch": "feat/me-identity-endpoint",
+      "description": "New read-only endpoint that returns the consolidated identity of the authenticated user so the frontend can, on login, know who the user is, which tenant they belong to, and their roles/permissions — complementing the existing GET /navigation menu endpoint. The UserContext already resolves userId, email, tenantId, roles, permissions and isPlatformAdmin per request (cached in Redis); the endpoint enriches it with the user's firstName/lastName/fullName via the query path (PrismaService direct). Tenant scope is tenantId only — no cross-context query to tenancy in this phase.",
+      "acceptance": [
+        "GET /api/v1/me — returns the authenticated user's identity read model",
+        "Response includes: userId, firebaseUid, email, firstName, lastName, fullName, tenantId, roles[], permissions[], isPlatformAdmin",
+        "Authenticated route (default guards); no extra permission required — any logged-in user can read their own identity",
+        "Query path only: read model built via PrismaService directly, no domain mutation, no domain events",
+        "Multi-tenant safe: resolves the user by the authenticated firebaseUid/userId, filtered by tenantId and deletedAt:null",
+        "Returns the same data shape regardless of platform admin; isPlatformAdmin reflected as boolean",
+        "Documented with @ApiStandardResponse and returned through the standard response envelope",
+        "Unit tests for the query handler; coverage >= 80%"
+      ],
+      "sdd": true,
+      "status": "done"
     }
   ]
 }
