@@ -4,6 +4,7 @@ import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { NavigationModule } from './navigation/navigation.module';
+import { IdentityModule } from './identity/identity.module';
 
 /**
  * Identity & Access Management bounded context.
@@ -17,6 +18,7 @@ import { NavigationModule } from './navigation/navigation.module';
     RolesModule,
     PermissionsModule,
     NavigationModule,
+    IdentityModule,
   ],
   exports: [AuthModule, UsersModule],
 })

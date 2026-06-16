@@ -2,28 +2,26 @@
 
 ## Feature en curso
 
-`products_catalog` (id 2) — Catalog · Products & Services catalog module.
+`current_user_identity` (id 3) — IAM · GET /me authenticated user identity endpoint.
 
 ## Plan
 
-Nuevo bounded context `src/contexts/catalog/` con un único módulo `products`:
-CRUD (create/list/get-by-id/update/archive) multi-tenant con soft-delete, `Money` VO para
-`unitPrice`, enums `type` (PRODUCT|SERVICE) y `status` (ACTIVE|ARCHIVED), eventos de dominio
-al outbox, y exposición cross-context de `ProductId` + `ProductQueryService`.
-
-Spec redactado en `specs/products_catalog/`:
-
-- `requirements.md` — R1..R32 (EARS estricto).
-- `design.md` — 4 capas, schema Prisma, handlers, exports, eventos, permisos, secuencia.
-- `tasks.md` — T0..T31 con trazabilidad a R<n>.
+Tasks T1..T9 de `specs/current_user_identity/tasks.md`. Nuevo módulo
+`src/contexts/iam/identity/` (gemelo arquitectónico de `iam/navigation`):
+`IdentityController` (`GET /api/v1/me`), query handler `get-my-identity`
+(query-path puro, `PrismaService` directo), read model
+`MyIdentityReadModel`. Se importa `IdentityModule` en
+`iam-context.module.ts` (sin exportarlo).
 
 ## Estado
 
-`done` — implementado y aprobado por reviewer. Listo para merge.
+Implementación completa (T1-T9 marcadas `[x]`). `./init.sh` en verde:
+90 suites / 383 tests. Cobertura de `get-my-identity.handler.ts` y
+`get-my-identity.query.ts`: 100%. Trazabilidad R1-R9 documentada en
+`progress/impl_current_user_identity.md`. Pendiente de revisión por el
+reviewer antes de marcar `done` en `feature_list.json`.
 
 ## Notas / Bloqueantes
 
-- Ninguno. Acceptance criteria suficientes; no hubo necesidad de `blocked`.
-- Decisión registrada en design §12: `unitPrice` como `Decimal(14,2)` + `currency VarChar(3)`
-  (consistente con el modelo `Opportunity`), no JSON.
+- Ninguno.
   </content>
